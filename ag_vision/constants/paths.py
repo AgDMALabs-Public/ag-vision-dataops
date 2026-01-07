@@ -5,6 +5,7 @@ import os
 
 logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 
+CAMERA_OPTIONS = ["rgb", "multi-spec", "thermal"]
 
 # ----------------------------------------------------------Helper------------------------------------------------------#
 def _format_date_string(date: str) -> str:
@@ -396,7 +397,7 @@ def drone_flight_details_path(drone_mission_dir: str, flight_date: str) -> str:
     return f"{drone_mission_dir}/{flight_date}/flight_details.json"
 
 
-def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, file_name: str) -> str:
+def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, camera: str, file_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
@@ -407,28 +408,33 @@ def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, file_name: s
     Returns:
     str: The complete file path to the specific image.
     """
+    assert camera.lower() in CAMERA_OPTIONS, f"Invalid camera option: {camera}. Available options are: {CAMERA_OPTIONS}"
+    camera = camera.lower()
     flight_date = _format_date_string(flight_date)
     file_name = file_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/raw_data/{file_name}"
+    return f"{drone_mission_dir}/{flight_date}/raw_data/{camera}/{file_name}"
 
 
-def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, method: str, ortho_date: str, image_name: str) -> str:
+def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str, image_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
     Args:
     drone_mission_dir (str): The base directory path for the drone flight.
     image_name (str): The name of the image file.
+    camera (str): The type of camera used for the flight eg: rgb, multi-spec, thermal.
 
     Returns:
     str: The complete file path to the specific image.
     """
+    assert camera.lower() in CAMERA_OPTIONS, f"Invalid camera option: {camera}. Available options are: {CAMERA_OPTIONS}"
+    camera = camera.lower()
     flight_date = _format_date_string(flight_date)
     ortho_date = _format_date_string(ortho_date)
     image_name = image_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/orthomosaic/{method}_{ortho_date}/{image_name}"
+    return f"{drone_mission_dir}/{flight_date}/orthomosaic/{method}_{ortho_date}/{camera}/{image_name}"
 
 
 def drone_flight_dem_path(drone_mission_dir: str, flight_date: str, method: str, dem_date: str, image_name: str) -> str:
@@ -449,7 +455,7 @@ def drone_flight_dem_path(drone_mission_dir: str, flight_date: str, method: str,
     return f"{drone_mission_dir}/{flight_date}/dem/{method}_{dem_date}/{image_name}"
 
 
-def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datetime: str, plot_id: str, image_name: str) -> str:
+def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str, image_name: str) -> str:
     """
     Generates the file path for a drone flight plot image based on the specified directory,
     date-time, plot identifier, and image name.

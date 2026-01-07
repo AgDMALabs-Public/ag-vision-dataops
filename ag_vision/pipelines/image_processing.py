@@ -34,17 +34,32 @@ def process_single_image(image_id, file_path, platform: str):
             'orientation': iq.orientation,
             'exposure': iq.exposure,
             'blur': iq.blur_score.pred if iq.blur_score else None,
-            'ml_object_resolution': acq.object_resolution_ml.pred if acq.object_resolution_ml else None
+            'ml_object_resolution': acq.object_resolution_ml.pred if acq.object_resolution_ml else None,
+            'error': None
         }
 
     except Exception as e:
-        return {'image_id': image_id, 'error': str(e)}
+        return {
+            'image_id': image_id,
+            'metadata_path': metadata_file,
+            'pct_pixel_over_saturation': None,
+            'pct_pixel_under_saturation': None,
+            'height_pxl': None,
+            'width_pxl': None,
+            'orientation': None,
+            'exposure': None,
+            'blur': None,
+            'ml_object_resolution': None,
+            'error': str(e)
+        }
 
 
-def generate_images_table(img_list: list, platform: str, project_index: int = 6):
+def generate_images_table(img_list: list, platform: str, project_index: int = 6) -> pd.DataFrame:
     """
 
     """
+    img_list = list(img_list)
+
     img_df = pd.DataFrame({'file_path': img_list})
 
     img_df['image_id'] = [os.path.basename(x).split('.')[0] for x in img_list]
@@ -91,6 +106,8 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
     """
 
     """
+    file_paths = list(file_paths)
+
     try:
         blur = iq.BlurInference()
     except Exception as e:

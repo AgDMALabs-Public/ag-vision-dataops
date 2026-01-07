@@ -1,3 +1,5 @@
+import uuid
+
 import pandas as pd
 from tqdm import tqdm
 import os
@@ -8,11 +10,12 @@ from ag_vision.data_io import local_io as lio
 from ag_vision.data_io import databricks_io as dio
 from open_aglabs.drone.model import DroneFlight
 
-INGEST_COLS = ['src_path', 'file_type']
+RAW_INGEST_COLS = ['src_path', 'file_type', 'camera']
+PLOT_INGEST_COLS = ['src_path', 'plot_id', 'camera']
 
 
 class DroneDataIngest(AgImageIngest):
-    def __init__(self, platform: str, cloud_bucket: str, flight_date: str, ingest_df: pd.DataFrame or None = None,
+    def __init__(self, platform: str, cloud_bucket: str, flight_date: str, plot_ingest_df: pd.DataFrame or None = None,
                  plot_boundary_key: str = None, gcp_key: str = None, orthomosaic_key: str = None, dem_key: str = None,
                  flight_metadata_key: str = None, flight_metadata: DroneFlight or None = None, cloud_client=None):
         """
@@ -35,7 +38,7 @@ class DroneDataIngest(AgImageIngest):
             cloud_client: The cloud client instance used for uploading files.
         """
         # Call the initializer of the parent class 'Image' to handle the common attributes
-        super().__init__(platform, cloud_bucket, ingest_df)
+        super().__init__(platform, cloud_bucket)
         self.cloud_client = cloud_client
         self.drone_mission_dir = None
         self.flight_date = pd.to_datetime(flight_date).strftime("%Y-%m-%d")
@@ -45,8 +48,10 @@ class DroneDataIngest(AgImageIngest):
         self.gcp_key = gcp_key
         self.orthomosaic_key = orthomosaic_key
         self.dem_key = dem_key
+        self.plot_ingest_df = plot_ingest_df
+        self.raw_ingest_df = None
 
-    def generate_ingest_df(self, file_list):
+    def generate_raw_ingest_df(self, file_list):
         """
         Generates and initializes an ingestion DataFrame with metadata from the given list of file paths.
         The DataFrame includes essential columns such as source path, file name, and image extension,
@@ -59,13 +64,41 @@ class DroneDataIngest(AgImageIngest):
         Returns:
             None
         """
-        self.ingest_df = pd.DataFrame({'src_path': file_list})
-        self.ingest_df['file_name'] = self.ingest_df['src_path'].apply(lambda x: os.path.basename(x))
-        self.ingest_df['img_ext'] = self.ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
+        self.raw_ingest_df = pd.DataFrame({'src_path': file_list})
+        self.raw_ingest_df['file_name'] = self.raw_ingest_df['src_path'].apply(lambda x: os.path.basename(x))
+        self.raw_ingest_df['img_ext'] = self.raw_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
 
-        for col in INGEST_COLS:
-            if col not in self.ingest_df.columns:
-                self.ingest_df[col] = None
+        for col in RAW_INGEST_COLS:
+            if col not in self.raw_ingest_df.columns:
+                self.raw_ingest_df[col] = None
+
+    def generate_plot_ingest_df(self, df: pd.DataFrame, generate_uuid: bool = True):
+        """
+        Generates and initializes an ingestion DataFrame with metadata from the given list of file paths.
+        The DataFrame includes essential columns such as source path, file name, and image extension,
+        along with additional columns predefined in the INGEST_COLS list. It ensures all specified
+        columns in INGEST_COLS are present in the DataFrame, initializing them with None if not already defined.
+
+        Args:
+            file_list (List[str]): List of file paths to generate the ingestion DataFrame.
+            generate_uuid (bool): Whether to generate a unique ID for each row in the DataFrame. This will be used as the new image name.
+        Returns:
+            None
+        """
+        self.plot_ingest_df = df.copy()
+
+        for col in PLOT_INGEST_COLS:
+            assert col in self.plot_ingest_df.columns, f"{col} is not in the raw ingest df, it needs {PLOT_INGEST_COLS}"
+
+        self.plot_ingest_df['file_name'] = self.raw_ingest_df['src_path'].apply(lambda x: os.path.basename(x))
+        self.plot_ingest_df['img_ext'] = self.raw_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
+
+        if generate_uuid:
+            self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['file_ext'].apply(lambda x: str(uuid.uuid4()) + '.' + x)
+        else:
+            self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['file_name']
+
+        self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['new_file_name'].str.lower()
 
     def add_season_code_to_metadata(self, year: int, country: str, crop: str, time_of_year: str):
         """
@@ -127,14 +160,32 @@ class DroneDataIngest(AgImageIngest):
         assert self.drone_mission_dir is not None, "drone_mission_dir cannot be None."
         assert self.flight_date is not None, "flight_date cannot be None."
 
-        for idx, row in self.ingest_df.iterrows():
-            if row['file_type'] in ['raw_image', 'flight_data']:
-                self.ingest_df.loc[idx, 'dst_path'] = paths.drone_raw_flight_data(
-                    drone_mission_dir=self.drone_mission_dir,
-                    flight_date=self.flight_date,
-                    file_name=str(row['file_name']))
-            else:
-                raise ValueError(f"The event type {row['file_type']} is not supported.")
+        for idx, row in self.raw_ingest_df.iterrows():
+            self.raw_ingest_df.loc[idx, 'dst_path'] = paths.drone_raw_flight_data(
+                drone_mission_dir=self.drone_mission_dir,
+                flight_date=self.flight_date,
+                camera=row['camera'],
+                file_name=str(row['file_name']))
+
+    def generate_plot_image_dst_path_name(self):
+        """
+        Generates and assigns the destination path for raw image or flight data files.
+
+        Raises:
+            ValueError: If the `file_type` of any row in `ingest_df` is not 'raw_image' or
+                'flight_data'.
+        """
+        assert self.drone_mission_dir is not None, "drone_mission_dir cannot be None."
+        assert self.flight_date is not None, "flight_date cannot be None."
+
+        for idx, row in self.plot_ingest_df.iterrows():
+            self.plot_ingest_df.loc[idx, 'dst_path'] = paths.drone_flight_plot_image_path(
+                drone_mission_dir=self.drone_mission_dir,
+                flight_date=self.flight_date,
+                camera=row['camera'],
+                datetime=row['file_generation_datetime'],
+                plot_id=row['plot_id'],
+                file_name= str(row['file_name']))
 
     def save_flight_metadata_to_json_local(self):
         """
@@ -231,18 +282,44 @@ class DroneDataIngest(AgImageIngest):
             uploads. The error details are recorded in the 'status' column of the
             DataFrame.
         """
-        for idx, row in tqdm(self.ingest_df.iterrows()):
+        for idx, row in tqdm(self.raw_ingest_df.iterrows()):
             try:
                 dio.upload_file_with_progress(w=self.cloud_client,
                                               local_file_path=row['src_path'],
                                               volume_path=row['dst_path'])
-                self.ingest_df.loc[idx, 'status'] = "success"
+                self.raw_ingest_df.loc[idx, 'status'] = "success"
             except Exception as e:
                 print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
                 print(f'The error is: {e}')
-                self.ingest_df.loc[idx, 'status'] = str(e)
+                self.raw_ingest_df.loc[idx, 'status'] = str(e)
 
-    def upload_orthomosaic_to_db(self, method: str, ortho_date: str, file_name: str):
+        def upload_plot_images_to_db(self):
+            """
+            Uploads raw flight data to a database, iterating through a DataFrame
+            and updating the status of each file upload.
+
+            Attributes:
+                ingest_df (DataFrame): A pandas DataFrame containing the details of files
+                to be uploaded. Each row should include 'src_path' and 'dst_path' columns
+                specifying the source path and destination path, respectively.
+
+            Raises:
+                Exception: Captures and logs any exceptions occurring during file
+                uploads. The error details are recorded in the 'status' column of the
+                DataFrame.
+            """
+            for idx, row in tqdm(self.plot_ingest_df.iterrows()):
+                try:
+                    dio.upload_file_with_progress(w=self.cloud_client,
+                                                  local_file_path=row['src_path'],
+                                                  volume_path=row['dst_path'])
+                    self.plot_ingest_df.loc[idx, 'status'] = "success"
+                except Exception as e:
+                    print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
+                    print(f'The error is: {e}')
+                    self.plot_ingest_df.loc[idx, 'status'] = str(e)
+
+    def upload_orthomosaic_to_db(self, method: str, ortho_date: str, camera: str, file_name: str):
         """
         Uploads an orthomosaic image to the database using the specified parameters. Ensures that
         the necessary keys and paths are not None before proceeding with the upload. The upload
@@ -256,6 +333,8 @@ class DroneDataIngest(AgImageIngest):
                 The date the orthomosaic image was generatedin string format.
             file_name: str
                 file_name: The name used to save the file in the cloud.
+            camera: str
+                camera: The camera used for the orthomosaic image eg: rgn. multi-spec, thermal.
 
         Raises:
             AssertionError: If orthomosaic_key or drone_mission_dir is None.
@@ -267,13 +346,13 @@ class DroneDataIngest(AgImageIngest):
                                                           flight_date=self.flight_date,
                                                           method=method,
                                                           ortho_date=ortho_date,
+                                                          camera=camera,
                                                           image_name=file_name)
         print(f"Saving to {upload_path}")
 
         dio.upload_file_with_progress(w=self.cloud_client,
                                       local_file_path=self.orthomosaic_key,
                                       volume_path=upload_path)
-
 
     def upload_dem_to_db(self, method: str, dem_date: str, file_name: str):
         """
