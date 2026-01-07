@@ -1,0 +1,62 @@
+name: My Workflow
+
+on: [push]
+
+jobs:
+  my_build_job:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.11]
+
+    steps: # These are the actions this job will perform
+      - name: Clean up disk space
+        run: |
+          echo "Initial disk space:"
+          df -h
+
+          echo "Removing large pre-installed toolchains..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+          echo "Disk space after cleanup:"
+          df -h
+
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+
+      - name: Install dependencies
+        run: pip install --no-build-isolation -e .
+      - name: Run tests
+        run: pytest
+
+      # --- Disk Space Cleanup Step ---
+      - name: 🧹 Disk Space Cleanup
+        # Crucial: runs even if previous steps (like tests) fail.
+        if: always()
+        run: |
+          echo "Checking disk usage before cleanup:"
+          df -h /home/runner/
+          
+          echo "Cleaning up Python environment artifacts..."
+          # Remove the __pycache__ folders and .pytest_cache directories
+          find . -type d -name "__pycache__" -exec rm -rf {} +
+          find . -type d -name ".pytest_cache" -exec rm -rf {} +
+          
+          # Remove the virtual environment if it was created in the workspace
+          # Note: This is usually not necessary if 'pip install -e .' installs system-wide, 
+          # but is a good practice if you use 'python -m venv' and activate it.
+          # rm -rf .venv 
+          
+          # If your build created any large output files or log files, add them here:
+          # rm -rf ./large-build-output-folder/
+          
+          echo "Checking disk usage after cleanup:"
+          df -h /home/runner/
