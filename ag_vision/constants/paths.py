@@ -473,7 +473,7 @@ def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datet
     datetime = _format_datetime_string(datetime)
     image_name = image_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/plot_image/{datetime}/{plot_id}/f{image_name}"
+    return f"{drone_mission_dir}/{flight_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
 
 
 def drone_plot_dem_path(drone_mission_dir: str, flight_date: str, datetime: str, plot_id: str, dem_name: str) -> str:
@@ -501,22 +501,9 @@ def drone_plot_dem_path(drone_mission_dir: str, flight_date: str, datetime: str,
     return f"{drone_mission_dir}/{flight_date}/plot_dem/{datetime}/{plot_id}/{dem_name}"
 
 
-def drone_pipeline_outputs(drone_mission_dir: str, flight_date, ) -> str:
+def drone_pipeline_outputs(drone_mission_dir: str, flight_date) -> str:
     """
-    Generates a formatted file path for a drone flight's plot DEM (Digital Elevation Model).
 
-    This function constructs a path to the DEM file of a particular plot for a given
-    datetime, plot ID, and DEM name within a specified root directory for orthophotos.
-
-    Parameters:
-        ortho_dir: Root directory where orthophotos are stored.
-        datetime: Date and time string in a certain format to identify the flight.
-        plot_id: Identifier of the plot.
-        dem_name: Name of the DEM file.
-
-    Returns:
-        A string representing the fully constructed path to the corresponding
-        DEM file within the specified directory structure.
     """
     flight_date = _format_date_string(flight_date)
     return f"{drone_mission_dir}/{flight_date}/outputs"
