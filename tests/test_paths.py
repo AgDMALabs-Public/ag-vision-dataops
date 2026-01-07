@@ -161,32 +161,35 @@ def test_drone_flight_ground_control_point_path():
 
 
 def test_drone_flight_raw_data_path():
-    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/raw_data/123456789.png'
+    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/raw_data/rgb/123456789.png'
     output = pth.drone_raw_flight_data(
         drone_mission_dir="project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a",
         flight_date='2023-10-07',
+        camera='rgb',
         file_name="123456789.png")
     assert expected == output
 
 
 def test_drone_flight_orthomosaic_path():
-    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/orthomosaic/agisoft_2023-10-07/test.tiff'
+    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/orthomosaic/agisoft_2023-10-07/rgb/test.tiff'
     output = pth.drone_flight_orthomosaic_path(
         drone_mission_dir="project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a",
         flight_date='2023-10-07',
         method="agisoft",
         ortho_date="2023-10-07",
+        camera='rgb',
         image_name='test.tiff')
     assert expected == output
 
 
 def test_drone_plot_image_path():
-    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/plot_image/2023-10-07 12:34:56/5426589/f123456789.png'
+    expected = 'project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a/2023-10-07/plot_image/2023-10-07 12:34:56/rgb/5426589/f123456789.png'
     output = pth.drone_flight_plot_image_path(
         drone_mission_dir="project_a/arusha/bean_breading/2023:usa:corn:winter/field_b/loc_c/drone/stand_count_a",
         flight_date='2023-10-07',
         datetime="2023-10-07 12:34:56",
         plot_id="5426589",
+        camera='rgb',
         image_name="123456789.png")
     assert expected == output
 
