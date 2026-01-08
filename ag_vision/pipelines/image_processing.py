@@ -27,13 +27,13 @@ def process_single_image(image_id, file_path, platform: str):
         return {
             'image_id': image_id,
             'metadata_path': metadata_file,
-            'pct_pixel_over_saturation': iq.pct_pixel_over_saturation,
-            'pct_pixel_under_saturation': iq.pct_pixel_under_saturation,
-            'height_pxl': iq.height,
-            'width_pxl': iq.width,
-            'orientation': iq.orientation,
-            'exposure': iq.exposure,
-            'blur': iq.blur_score.pred if iq.blur_score else -1,
+            'pct_pixel_over_saturation': float(iq.pct_pixel_over_saturation),
+            'pct_pixel_under_saturation': float(iq.pct_pixel_under_saturation),
+            'height_pxl': int(iq.height),
+            'width_pxl': int(iq.width),
+            'orientation': float(iq.orientation),
+            'exposure': float(iq.exposure),
+            'blur': int(iq.blur_score.pred) if iq.blur_score else -1,
             'ml_object_resolution': acq.object_resolution_ml.pred if acq.object_resolution_ml else "",
             'error': ""
         }

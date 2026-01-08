@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 
 CAMERA_OPTIONS = ["rgb", "multi-spec", "thermal"]
 
+
 # ----------------------------------------------------------Helper------------------------------------------------------#
 def _format_date_string(date: str) -> str:
     """
@@ -328,23 +329,14 @@ def drone_mission_dir(location_path: str, mission_name: str):
     """
     mission_name = mission_name.lower()
 
-
     return f"{location_path}/drone/{mission_name}"
 
 
 def drone_study_boundary_path(drone_mission_dir: str) -> str:
     """
-    Constructs the full file path for the study boundary GeoJSON of a given task.
 
-    Parameters:
-    location_path: str
-        The base file path of the field study.
-
-    Returns:
-    str
-        The complete file path to the study boundary GeoJSON.
     """
-    drone_mission_dir = os.path.dirname(drone_mission_dir)
+
     return f"{drone_mission_dir}/field_data/study_boundary.geojson"
 
 
@@ -416,7 +408,8 @@ def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, camera: str,
     return f"{drone_mission_dir}/{flight_date}/raw_data/{camera}/{file_name}"
 
 
-def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str, image_name: str) -> str:
+def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str,
+                                  image_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
@@ -455,7 +448,8 @@ def drone_flight_dem_path(drone_mission_dir: str, flight_date: str, method: str,
     return f"{drone_mission_dir}/{flight_date}/dem/{method}_{dem_date}/{image_name}"
 
 
-def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str, image_name: str) -> str:
+def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str,
+                                 image_name: str) -> str:
     """
     Generates the file path for a drone flight plot image based on the specified directory,
     date-time, plot identifier, and image name.
@@ -507,3 +501,153 @@ def drone_pipeline_outputs(drone_mission_dir: str, flight_date) -> str:
     """
     flight_date = _format_date_string(flight_date)
     return f"{drone_mission_dir}/{flight_date}/outputs"
+
+
+# ---------------------------------------------------Rover------------------------------------------------------------#
+def rover_mission_dir(location_path: str, mission_name: str):
+    """
+    Generates a directory path for a rover mission.
+
+    This function creates a rover mission directory path by combining the provided
+    location path and the mission name. The mission name is converted to lowercase
+    before being appended to the directory structure.
+
+    Args:
+        location_path (str): The base location path where the rover directory resides. A location is where a trial is ran.
+        mission_name (str): The name of the rover mission to be appended to the
+            path. It will be formatted in lowercase.
+
+    Returns:
+        str: A string representing the complete directory path for the rover
+            mission.
+    """
+    mission_name = mission_name.lower()
+
+    return f"{location_path}/rover/{mission_name}"
+
+
+def rover_plot_book_path(mission_dir: str) -> str:
+    """
+    Constructs the file path to the rover's plot book CSV within the given mission directory.
+
+    Args:
+        mission_dir (str): The directory of the drone mission containing the field data.
+
+    Returns:
+        str: The full file path to the 'plot_book.csv' file.
+    """
+
+    return f"{drone_mission_dir}/field_data/plot_book.csv"
+
+
+def rover_plot_boundary_path(mission_dir: str) -> str:
+    """
+    Generates the file path to the plot boundary GeoJSON file for a given rover mission.
+
+    Args:
+        mission_dir (str): The base directory of the rover mission.
+
+    Returns:
+        str: The full file path to the plot boundary GeoJSON file.
+    """
+    return f"{rover_mission_dir}/field_data/plot_boundary.geojson"
+
+
+def rover_scan_details_path(mission_dir: str, scan_date: str) -> str:
+    """
+    Constructs the file path for the scan details of a specific rover mission and scan date.
+
+    The function takes the mission directory of the rover and a scan date, formats
+    the scan date, and constructs the appropriate file path to access the scan
+    details stored in a JSON file.
+
+    Args:
+        mission_dir (str): The directory path of the rover mission.
+        scan_date (str): The date of the scan in string format.
+
+    Returns:
+        str: File path pointing to the scan details JSON for the specific scan date.
+    """
+    scan_date = _format_date_string(scan_date)
+    return f"{drone_mission_dir}/{scan_date}/scan_details.json"
+
+
+def rover_scan_raw_data_path(mission_dir: str, scan_date: str, camera: str, file_name: str) -> str:
+    """
+    Generates the file path for raw scan data of a rover mission based on input parameters.
+
+    The function formats and validates its inputs to construct a well-structured string
+    representing the path to raw scan data. Input validation ensures that the camera
+    selection is allowable, and date strings are consistently formatted.
+
+    Args:
+        mission_dir: Base directory path of the rover mission.
+        scan_date: Date of the scan in a string format.
+        camera: Camera identifier used in the scanning operation.
+        file_name: Name of the file associated with the scan data.
+
+    Returns:
+        str: A formatted string representing the path to the raw scan data.
+
+    Raises:
+        AssertionError: If the provided `camera` is not within available `CAMERA_OPTIONS`.
+    """
+    assert camera.lower() in CAMERA_OPTIONS, f"Invalid camera option: {camera}. Available options are: {CAMERA_OPTIONS}"
+    camera = camera.lower()
+    scan_date = _format_date_string(scan_date)
+    file_name = file_name.lower()
+
+    return f"{drone_mission_dir}/{scan_date}/raw_data/{camera}/{file_name}"
+
+
+def rover_scan_stiched_image_path(mission_dir: str, scan_date: str, method: str, stiched_date: str, camera: str,
+                                  file_name: str) -> str:
+    """
+    Generate the file path for a stitched image from a rover scan based on mission parameters.
+
+    This function constructs the file path for a stitched image generated from a rover scan
+    based on various mission-related parameters such as the mission directory, the scan date,
+    the stitching method, the stitching date, the camera used, and the image name. It validates
+    the given camera with the available camera options and ensures consistent formatting
+    of the dates and image name.
+
+    Args:
+        mission_dir (str): Directory of the rover mission.
+        scan_date (str): The date of the scan. For example, "YYYY-MM-DD".
+        method (str): The stitching method used for generating the image.
+        stiched_date (str): The date the image was stitched. For example, "YYYY-MM-DD".
+        camera (str): The camera used for capturing the scan. Expected to be one of the
+            available camera options.
+        image_name (str): The name of the image file.
+
+    Returns:
+        str: The constructed file path of the stitched image.
+    """
+    assert camera.lower() in CAMERA_OPTIONS, f"Invalid camera option: {camera}. Available options are: {CAMERA_OPTIONS}"
+
+    camera = camera.lower()
+    scan_date = _format_date_string(scan_date)
+    stiched_date = _format_date_string(stiched_date)
+    file_name = file_name.lower()
+
+    return f"{drone_mission_dir}/{scan_date}/stiched/{method}_{stiched_date}/{camera}/{file_name}"
+
+
+def rover_scan_plot_image_path(mission_dir: str, scan_date: str, datetime: str, camera: str, plot_id: str,
+                                 image_name: str) -> str:
+    """
+
+    """
+    plot_id = plot_id.lower()
+    datetime = _format_datetime_string(datetime)
+    image_name = image_name.lower()
+
+    return f"{drone_mission_dir}/{scan_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
+
+
+def rover_pipeline_outputs_dir(drone_mission_dir: str, scan_date) -> str:
+    """
+
+    """
+    scan_date = _format_date_string(scan_date)
+    return f"{drone_mission_dir}/{scan_date}/outputs"
