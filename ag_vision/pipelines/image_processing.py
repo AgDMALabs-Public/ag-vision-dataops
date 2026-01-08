@@ -33,23 +33,23 @@ def process_single_image(image_id, file_path, platform: str):
             'width_pxl': iq.width,
             'orientation': iq.orientation,
             'exposure': iq.exposure,
-            'blur': iq.blur_score.pred if iq.blur_score else None,
-            'ml_object_resolution': acq.object_resolution_ml.pred if acq.object_resolution_ml else None,
-            'error': None
+            'blur': iq.blur_score.pred if iq.blur_score else -1,
+            'ml_object_resolution': acq.object_resolution_ml.pred if acq.object_resolution_ml else "",
+            'error': ""
         }
 
     except Exception as e:
         return {
             'image_id': image_id,
             'metadata_path': metadata_file,
-            'pct_pixel_over_saturation': None,
-            'pct_pixel_under_saturation': None,
-            'height_pxl': None,
-            'width_pxl': None,
-            'orientation': None,
-            'exposure': None,
-            'blur': None,
-            'ml_object_resolution': None,
+            'pct_pixel_over_saturation': 0.0,
+            'pct_pixel_under_saturation': 0.0,
+            'height_pxl': 0,
+            'width_pxl': 0,
+            'orientation': "",
+            'exposure': 0,
+            'blur': -1,
+            'ml_object_resolution': "",
             'error': str(e)
         }
 
