@@ -50,7 +50,6 @@ class BlurInference:
 
         # 2. Download weights from Hugging Face Hub and load them
         try:
-
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
