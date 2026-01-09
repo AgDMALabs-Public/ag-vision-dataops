@@ -31,7 +31,7 @@ dependencies = [
     "huggingface-hub>=1.1.5",
     "fastapi>=0.123.8",
     "python-dotenv>=0.9.9",
-
+    "rasterio>=1.4.4",
 ]
 
 [tool.setuptools]
