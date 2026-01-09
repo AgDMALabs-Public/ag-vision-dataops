@@ -154,16 +154,20 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
 
 
 def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
+    be = 'good'
+    me = 'good'
     try:
         blur = iq.BlurInference()
     except Exception as e:
         print(f'Failed to load blur model: {e}')
+        be = str(e)
         blur = None
 
     try:
         ait_model = iq.AgImageType()
     except Exception as e:
         print(f'Failed to load AIT model: {e}')
+        me = str(e)
         ait_model = None
 
     out_df_list = []
@@ -206,4 +210,7 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
             df['status'] = str(e)
             out_df_list.append(df)
 
-    return pd.concat(out_df_list)
+    out_df = pd.concat(out_df_list)
+    out_df['be'] = be
+    out_df['me'] = me
+    return out_df
