@@ -61,7 +61,8 @@ class BlurInference:
 
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
-                                         filename=HF_WEIGHTS_FILENAME)
+                                         filename=HF_WEIGHTS_FILENAME,
+                                         cache_dir=cache_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
@@ -137,7 +138,8 @@ class AgImageType:
 
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
-                                         filename=HF_WEIGHTS_FILENAME)
+                                         filename=HF_WEIGHTS_FILENAME,
+                                         cache_dir=cache_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
