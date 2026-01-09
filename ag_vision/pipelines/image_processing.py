@@ -153,20 +153,22 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
             print(f'Fail, {e}')
 
 
-def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
+def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None):
     be = 'success'
     me = 'success'
-    try:
-        blur = iq.BlurInference()
-    except Exception as e:
-        be = str(e)
-        blur = None
+    if blur_class is None:
+        try:
+            blur = iq.BlurInference()
+        except Exception as e:
+            be = str(e)
+            blur = None
 
-    try:
-        ait_model = iq.AgImageType()
-    except Exception as e:
-        me = str(e)
-        ait_model = None
+    if ait_class is None:
+        try:
+            ait_class = iq.AgImageType()
+        except Exception as e:
+            me = str(e)
+            ait_class = None
 
     out_df_list = []
 
@@ -182,17 +184,17 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
             ag_img.generate_metadata_key_from_img_key()
             ag_img.read_metadata()
 
-            if blur is not None:
+            if blur_class is not None:
                 df['status'] = 'success'
-                blur_inf = blur.predict(cv_img=ag_img.image)
+                blur_inf = blur_class.predict(cv_img=ag_img.image)
                 ag_img.add_image_quality_blur_metrics_to_metadata(pred=blur_inf['pred'],
                                                                   confidence=blur_inf['prob'],
                                                                   version=blur_inf['version'],
                                                                   model_id=blur_inf['id'],
                                                                   overwrite=True)
-            if ait_model is not None:
+            if ait_class is not None:
                 df['status'] = 'success'
-                ait_inf = ait_model.predict(cv_img=ag_img.image)
+                ait_inf = ait_class.predict(cv_img=ag_img.image)
                 ag_img.add_acq_properties_object_resolution_ml_metrics_to_metadata(pred=ait_inf['pred'],
                                                                                    confidence=ait_inf['prob'],
                                                                                    version=ait_inf['version'],

@@ -133,7 +133,8 @@ class AgImageType:
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         local_dir=temp_dir)
+                                         local_dir=temp_dir,
+                                         local_dir_use_symlinks=False)
 
             print(f"Loaded weights from local cache: {model_path}")
 
@@ -146,7 +147,7 @@ class AgImageType:
             # Handle potential errors (e.g., file not found, connection error)
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
-            raise RuntimeError(f"Error in BlurInference.__init__: {e}") from e
+            raise RuntimeError(f"Error in AgImageType.__init__: {e}") from e
 
 
         self.model = inference_model.eval()  # Set to evaluation mode
