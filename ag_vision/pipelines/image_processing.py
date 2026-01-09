@@ -153,19 +153,21 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
             print(f'Fail, {e}')
 
 
-def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None):
+def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None, model_cache_dir=None, model_local_dir: None = None):
     be = 'success'
     me = 'success'
     if blur_class is None:
         try:
-            blur_class = iq.BlurInference()
+            blur_class = iq.BlurInference(cache_dir=model_cache_dir,
+                                          local_dir=model_local_dir)
         except Exception as e:
             be = str(e)
             blur_class = None
 
     if ait_class is None:
         try:
-            ait_class = iq.AgImageType()
+            ait_class = iq.AgImageType(cache_dir=model_cache_dir,
+                                       local_dir=model_local_dir)
         except Exception as e:
             me = str(e)
             ait_class = None
