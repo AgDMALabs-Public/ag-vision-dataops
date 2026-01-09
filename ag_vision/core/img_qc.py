@@ -1,8 +1,7 @@
-import os
 import cv2
 import numpy as np
 from PIL import Image
-import importlib.resources
+import tempfile
 
 import torch
 import torchvision
@@ -52,13 +51,12 @@ class BlurInference:
         # 2. Download weights from Hugging Face Hub and load them
         try:
             # FIX: Use a writable directory for caching in Spark environments
-            cache_dir = "/tmp/huggingface_cache"
-            os.makedirs(cache_dir, exist_ok=True)
+            temp_dir = tempfile.mkdtemp()
 
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         cache_dir=cache_dir)
+                                         cache_dir=temp_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
@@ -129,13 +127,13 @@ class AgImageType:
         # 2. Download weights from Hugging Face Hub and load them
         try:
             # FIX: Use a writable directory for caching in Spark environments
-            cache_dir = "/tmp/huggingface_cache"
-            os.makedirs(cache_dir, exist_ok=True)
+            temp_dir = tempfile.mkdtemp()
+
 
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         cache_dir=cache_dir)
+                                         cache_dir=temp_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
