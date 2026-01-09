@@ -28,6 +28,7 @@ ag_vision/data_io/temp.py
 ag_vision/drone/__init__.py
 ag_vision/drone/image.py
 ag_vision/drone/ingest.py
+ag_vision/drone/utils.py
 ag_vision/mobile/__init__.py
 ag_vision/mobile/image.py
 ag_vision/mobile/ingest.py

@@ -332,15 +332,15 @@ def drone_mission_dir(location_path: str, mission_name: str):
     return f"{location_path}/drone/{mission_name}"
 
 
-def drone_study_boundary_path(drone_mission_dir: str) -> str:
+def drone_study_boundary_path(mission_dir: str) -> str:
     """
 
     """
 
-    return f"{drone_mission_dir}/field_data/study_boundary.geojson"
+    return f"{mission_dir}/field_data/study_boundary.geojson"
 
 
-def drone_plot_boundary_path(drone_mission_dir: str) -> str:
+def drone_plot_boundary_path(mission_dir: str) -> str:
     """
     Generates the file path for a plot boundary GeoJSON file.
 
@@ -358,10 +358,10 @@ def drone_plot_boundary_path(drone_mission_dir: str) -> str:
     str
         The full file path to the plot boundary GeoJSON file.
     """
-    return f"{drone_mission_dir}/field_data/plot_boundary.geojson"
+    return f"{mission_dir}/field_data/plot_boundary.geojson"
 
 
-def drone_mission_ground_control_point_path(drone_mission_dir: str) -> str:
+def drone_mission_ground_control_point_path(mission_dir: str) -> str:
     """
     Generates the file path for storing the flight details of a drone.
 
@@ -372,29 +372,29 @@ def drone_mission_ground_control_point_path(drone_mission_dir: str) -> str:
     Returns:
     str: The complete file path for the flight details JSON file.
     """
-    return f"{drone_mission_dir}/field_data/ground_control_points.geojson"
+    return f"{mission_dir}/field_data/ground_control_points.geojson"
 
 
-def drone_flight_details_path(drone_mission_dir: str, flight_date: str) -> str:
+def drone_flight_details_path(mission_dir: str, flight_date: str) -> str:
     """
     Generates the file path for storing the flight details of a drone.
 
     Parameters:
-    drone_mission_dir (str): The base directory path where drone flight data is stored.
+    mission_dir (str): The base directory path where drone flight data is stored.
 
     Returns:
     str: The complete file path for the flight details JSON file.
     """
     flight_date = _format_date_string(flight_date)
-    return f"{drone_mission_dir}/{flight_date}/flight_details.json"
+    return f"{mission_dir}/{flight_date}/flight_details.json"
 
 
-def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, camera: str, file_name: str) -> str:
+def drone_raw_flight_data(mission_dir: str, flight_date: str, camera: str, file_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
     Args:
-    drone_mission_dir (str): The base directory path for the drone flight.
+    mission_dir (str): The base directory path for the drone flight.
     image_name (str): The name of the image file.
 
     Returns:
@@ -405,16 +405,16 @@ def drone_raw_flight_data(drone_mission_dir: str, flight_date: str, camera: str,
     flight_date = _format_date_string(flight_date)
     file_name = file_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/raw_data/{camera}/{file_name}"
+    return f"{mission_dir}/{flight_date}/raw_data/{camera}/{file_name}"
 
 
-def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str,
+def drone_flight_orthomosaic_path(mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str,
                                   image_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
     Args:
-    drone_mission_dir (str): The base directory path for the drone flight.
+    mission_dir (str): The base directory path for the drone flight.
     image_name (str): The name of the image file.
     camera (str): The type of camera used for the flight eg: rgb, multi-spec, thermal.
 
@@ -427,15 +427,15 @@ def drone_flight_orthomosaic_path(drone_mission_dir: str, flight_date: str, meth
     ortho_date = _format_date_string(ortho_date)
     image_name = image_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/orthomosaic/{method}_{ortho_date}/{camera}/{image_name}"
+    return f"{mission_dir}/{flight_date}/orthomosaic/{method}_{ortho_date}/{camera}/{image_name}"
 
 
-def drone_flight_dem_path(drone_mission_dir: str, flight_date: str, method: str, dem_date: str, image_name: str) -> str:
+def drone_flight_dem_path(mission_dir: str, flight_date: str, method: str, dem_date: str, image_name: str) -> str:
     """
     Constructs the full file path for a specific image from a drone flight.
 
     Args:
-    drone_mission_dir (str): The base directory path for the drone flight.
+    mission_dir (str): The base directory path for the drone flight.
     image_name (str): The name of the image file.
 
     Returns:
@@ -445,10 +445,10 @@ def drone_flight_dem_path(drone_mission_dir: str, flight_date: str, method: str,
     flight_date = _format_date_string(flight_date)
     image_name = image_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/dem/{method}_{dem_date}/{image_name}"
+    return f"{mission_dir}/{flight_date}/dem/{method}_{dem_date}/{image_name}"
 
 
-def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str,
+def drone_flight_plot_image_path(mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str,
                                  image_name: str) -> str:
     """
     Generates the file path for a drone flight plot image based on the specified directory,
@@ -467,40 +467,26 @@ def drone_flight_plot_image_path(drone_mission_dir: str, flight_date: str, datet
     datetime = _format_datetime_string(datetime)
     image_name = image_name.lower()
 
-    return f"{drone_mission_dir}/{flight_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
+    return f"{mission_dir}/{flight_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
 
 
-def drone_plot_dem_path(drone_mission_dir: str, flight_date: str, datetime: str, plot_id: str, dem_name: str) -> str:
+def drone_pipeline_outputs(mission_dir: str, flight_date) -> str:
     """
-    Generates a formatted file path for a drone flight's plot DEM (Digital Elevation Model).
+    Generates the path to the drone pipeline outputs based on the mission directory
+    and formatted flight date. The function constructs the path by combining the
+    provided mission directory with the specified flight date in a structured
+    format, appending 'outputs' as the final directory.
 
-    This function constructs a path to the DEM file of a particular plot for a given
-    datetime, plot ID, and DEM name within a specified root directory for orthophotos.
-
-    Parameters:
-        ortho_dir: Root directory where orthophotos are stored.
-        datetime: Date and time string in a certain format to identify the flight.
-        plot_id: Identifier of the plot.
-        dem_name: Name of the DEM file.
+    Args:
+        mission_dir (str): The base directory of the mission.
+        flight_date: The flight date to be formatted and incorporated
+            into the path.
 
     Returns:
-        A string representing the fully constructed path to the corresponding
-        DEM file within the specified directory structure.
-    """
-    plot_id = plot_id.lower()
-    datetime = _format_datetime_string(datetime)
-    flight_date = _format_date_string(flight_date)
-    dem_name = dem_name.lower()
-
-    return f"{drone_mission_dir}/{flight_date}/plot_dem/{datetime}/{plot_id}/{dem_name}"
-
-
-def drone_pipeline_outputs(drone_mission_dir: str, flight_date) -> str:
-    """
-
+        str: The full path to the drone pipeline outputs directory.
     """
     flight_date = _format_date_string(flight_date)
-    return f"{drone_mission_dir}/{flight_date}/outputs"
+    return f"{mission_dir}/{flight_date}/outputs"
 
 
 # ---------------------------------------------------Rover------------------------------------------------------------#
@@ -531,13 +517,13 @@ def rover_plot_book_path(mission_dir: str) -> str:
     Constructs the file path to the rover's plot book CSV within the given mission directory.
 
     Args:
-        mission_dir (str): The directory of the drone mission containing the field data.
+        mission_dir (str): The directory of the rover mission.
 
     Returns:
         str: The full file path to the 'plot_book.csv' file.
     """
 
-    return f"{drone_mission_dir}/field_data/plot_book.csv"
+    return f"{mission_dir}/field_data/plot_book.csv"
 
 
 def rover_plot_boundary_path(mission_dir: str) -> str:
@@ -569,7 +555,7 @@ def rover_scan_details_path(mission_dir: str, scan_date: str) -> str:
         str: File path pointing to the scan details JSON for the specific scan date.
     """
     scan_date = _format_date_string(scan_date)
-    return f"{drone_mission_dir}/{scan_date}/scan_details.json"
+    return f"{mission_dir}/{scan_date}/scan_details.json"
 
 
 def rover_scan_raw_data_path(mission_dir: str, scan_date: str, camera: str, file_name: str) -> str:
@@ -597,7 +583,7 @@ def rover_scan_raw_data_path(mission_dir: str, scan_date: str, camera: str, file
     scan_date = _format_date_string(scan_date)
     file_name = file_name.lower()
 
-    return f"{drone_mission_dir}/{scan_date}/raw_data/{camera}/{file_name}"
+    return f"{mission_dir}/{scan_date}/raw_data/{camera}/{file_name}"
 
 
 def rover_scan_stiched_image_path(mission_dir: str, scan_date: str, method: str, stiched_date: str, camera: str,
@@ -630,24 +616,51 @@ def rover_scan_stiched_image_path(mission_dir: str, scan_date: str, method: str,
     stiched_date = _format_date_string(stiched_date)
     file_name = file_name.lower()
 
-    return f"{drone_mission_dir}/{scan_date}/stiched/{method}_{stiched_date}/{camera}/{file_name}"
+    return f"{mission_dir}/{scan_date}/stiched/{method}_{stiched_date}/{camera}/{file_name}"
 
 
 def rover_scan_plot_image_path(mission_dir: str, scan_date: str, datetime: str, camera: str, plot_id: str,
-                                 image_name: str) -> str:
+                                 file_name: str) -> str:
     """
+    Generates a path string for a rover's plot image scan file based on the provided directory, date,
+    camera, plot identifier, and filename. The function processes the given plot ID and file name
+    to ensure they are in lowercase, and formats the datetime string to a specific format for path
+    construction. The generated path organizes the information hierarchically, starting from the
+    mission directory.
 
+    Args:
+        mission_dir: Path to the mission's root directory.
+        scan_date: Date of the scan in string format. Used in the path as the date of the scan.
+        datetime: Datetime string formatted to specify when images were cropped.
+        camera: Identifier for the camera used.
+        plot_id: Identifier for the plot being scanned. It is converted to lowercase.
+        file_name: Name of the file for the scan's image. It is converted to lowercase.
+
+    Returns:
+        A string representing the full path to the rover's plot image scan file, organized by directory
+        hierarchy.
     """
     plot_id = plot_id.lower()
     datetime = _format_datetime_string(datetime)
-    image_name = image_name.lower()
+    file_name = file_name.lower()
 
-    return f"{drone_mission_dir}/{scan_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
+    return f"{mission_dir}/{scan_date}/plot_image/{datetime}/{camera}/{plot_id}/{file_name}"
 
 
-def rover_pipeline_outputs_dir(drone_mission_dir: str, scan_date) -> str:
+def rover_pipeline_outputs_dir(mission_dir: str, scan_date) -> str:
     """
+    Generates the directory path for rover pipeline outputs based on mission directory and scan date.
 
+    This function constructs the path to the outputs directory for a given mission
+    and scan date by formatting the scan date appropriately and appending it to the
+    mission directory path.
+
+    Args:
+        mission_dir (str): The base directory of the mission.
+        scan_date: The scan date to include in the outputs path.
+
+    Returns:
+        str: The fully constructed path to the rover pipeline outputs directory.
     """
     scan_date = _format_date_string(scan_date)
-    return f"{drone_mission_dir}/{scan_date}/outputs"
+    return f"{mission_dir}/{scan_date}/outputs"

@@ -228,7 +228,7 @@ class RoverDataIngest(AgImageIngest):
 
         for idx, row in self.plot_ingest_df.iterrows():
             self.plot_ingest_df.loc[idx, 'dst_path'] = paths.rover_scan_plot_image_path(
-                rover_mission_dir=self.rover_mission_dir,
+                mission_dir=self.rover_mission_dir,
                 scan_date=self.scan_date,
                 camera=row['camera'],
                 datetime=row['file_generation_datetime'],
