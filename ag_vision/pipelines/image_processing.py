@@ -166,7 +166,11 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
         print(f'Failed to load AIT model: {e}')
         ait_model = None
 
+    out_df_list = []
+
     for file_path in tqdm(file_paths):
+        df = pd.DataFrame({'file_path': [file_path],
+                           'status': 'unknown'})
         try:
             ag_img = AgImage(img_key=file_path,
                              platform=platform,
@@ -177,6 +181,7 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
             ag_img.read_metadata()
 
             if blur is not None:
+                df['status'] = 'success'
                 blur_inf = blur.predict(cv_img=ag_img.image)
                 ag_img.add_image_quality_blur_metrics_to_metadata(pred=blur_inf['pred'],
                                                                   confidence=blur_inf['prob'],
@@ -184,6 +189,7 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
                                                                   model_id=blur_inf['id'],
                                                                   overwrite=True)
             if ait_model is not None:
+                df['status'] = 'success'
                 ait_inf = ait_model.predict(cv_img=ag_img.image)
                 ag_img.add_acq_properties_object_resolution_ml_metrics_to_metadata(pred=ait_inf['pred'],
                                                                                    confidence=ait_inf['prob'],
@@ -193,5 +199,11 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None):
 
             ag_img.save_metadata()
 
+            out_df_list.append(df)
+
         except Exception as e:
             print(f'Fail, {e}')
+            df['status'] = str(e)
+            out_df_list.append(df)
+
+    return pd.concat(out_df_list)
