@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image
-import tempfile
+import os
 
 import torch
 import torchvision
@@ -30,7 +30,7 @@ def convert_opencv_to_pil(opencv_image):
 
 
 class BlurInference:
-    def __init__(self, device=None, cache_dir=None, local_dir = None):
+    def __init__(self, device=None, cache_dir=None, local_dir=None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -38,6 +38,10 @@ class BlurInference:
         self.device = device if device else torch.device("cpu")
         self.class_names = sorted([str(i) for i in range(0, 11)])
         num_classes = len(self.class_names)
+
+        if cache_dir:
+            os.environ['HF_HOME'] = cache_dir
+            os.environ['TORCH_HOME'] = cache_dir
 
         HF_MODEL_REPO_ID = "dwilli37/ag_image_blur_detection"
         HF_WEIGHTS_FILENAME = "blur_weights_2.pth"
@@ -104,7 +108,7 @@ class BlurInference:
 
 
 class AgImageType:
-    def __init__(self, device=None, cache_dir=None, local_dir = None):
+    def __init__(self, device=None, cache_dir=None, local_dir=None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -112,6 +116,10 @@ class AgImageType:
         self.device = device if device else torch.device("cpu")
         self.class_names = sorted(['half-plot', 'junk', 'multi-plant', 'single-plant', 'whole-plot', 'field'])
         num_classes = len(self.class_names)
+
+        if cache_dir:
+            os.environ['HF_HOME'] = cache_dir
+            os.environ['TORCH_HOME'] = cache_dir
 
         HF_MODEL_REPO_ID = "dwilli37/ag_image_type"
         HF_WEIGHTS_FILENAME = "version_1.pth"
@@ -142,7 +150,6 @@ class AgImageType:
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
             raise RuntimeError(f"Error in AgImageType.__init__: {e}") from e
-
 
         self.model = inference_model.eval()  # Set to evaluation mode
 
