@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 from PIL import Image
@@ -54,16 +55,19 @@ class BlurInference:
 
         # 2. Download weights from Hugging Face Hub and load them
         try:
+            # FIX: Use a writable directory for caching in Spark environments
+            cache_dir = "/tmp/huggingface_cache"
+            os.makedirs(cache_dir, exist_ok=True)
+
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
-                                         filename=HF_WEIGHTS_FILENAME
-            )
+                                         filename=HF_WEIGHTS_FILENAME)
+
             print(f"Loaded weights from local cache: {model_path}")
 
             # Load the state dict using the path returned by hf_hub_download
             inference_model.load_state_dict(
-                torch.load(model_path, map_location=self.device)
-            )
+                torch.load(model_path, map_location=self.device))
 
         except Exception as e:
             # Handle potential errors (e.g., file not found, connection error)
@@ -105,6 +109,7 @@ class BlurInference:
             'id': 'dwilli37/ag_image_blur_detection'
         }
 
+
 class AgImageType:
     def __init__(self, device=None):
         """
@@ -126,10 +131,14 @@ class AgImageType:
 
         # 2. Download weights from Hugging Face Hub and load them
         try:
+            # FIX: Use a writable directory for caching in Spark environments
+            cache_dir = "/tmp/huggingface_cache"
+            os.makedirs(cache_dir, exist_ok=True)
+
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
-                                         filename=HF_WEIGHTS_FILENAME
-            )
+                                         filename=HF_WEIGHTS_FILENAME)
+
             print(f"Loaded weights from local cache: {model_path}")
 
             # Load the state dict using the path returned by hf_hub_download
