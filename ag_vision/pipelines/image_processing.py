@@ -158,10 +158,10 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur
     me = 'success'
     if blur_class is None:
         try:
-            blur = iq.BlurInference()
+            blur_class = iq.BlurInference()
         except Exception as e:
             be = str(e)
-            blur = None
+            blur_class = None
 
     if ait_class is None:
         try:

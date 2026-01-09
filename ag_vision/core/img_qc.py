@@ -30,7 +30,7 @@ def convert_opencv_to_pil(opencv_image):
 
 
 class BlurInference:
-    def __init__(self, device=None):
+    def __init__(self, device=None, cache_dir=None, local_dir = None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -50,13 +50,12 @@ class BlurInference:
 
         # 2. Download weights from Hugging Face Hub and load them
         try:
-            # FIX: Use a writable directory for caching in Spark environments
-            temp_dir = tempfile.mkdtemp()
 
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         local_dir=temp_dir)
+                                         cache_dir=cache_dir,
+                                         local_dir=local_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
@@ -106,7 +105,7 @@ class BlurInference:
 
 
 class AgImageType:
-    def __init__(self, device=None):
+    def __init__(self, device=None, cache_dir=None, local_dir = None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -126,15 +125,11 @@ class AgImageType:
 
         # 2. Download weights from Hugging Face Hub and load them
         try:
-            # FIX: Use a writable directory for caching in Spark environments
-            temp_dir = tempfile.mkdtemp()
-
-
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         local_dir=temp_dir,
-                                         local_dir_use_symlinks=False)
+                                         cache_dir=cache_dir,
+                                         local_dir=local_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
