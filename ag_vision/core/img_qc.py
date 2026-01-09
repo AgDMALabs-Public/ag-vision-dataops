@@ -70,7 +70,7 @@ class BlurInference:
             # Handle potential errors (e.g., file not found, connection error)
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
-            raise f"initialization, {e}"
+            raise RuntimeError(f"Error in BlurInference.__init__: {e}") from e
 
         self.model = inference_model.eval()  # Set to evaluation mode
 
@@ -148,7 +148,8 @@ class AgImageType:
             # Handle potential errors (e.g., file not found, connection error)
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
-            raise f"initialization, {e}"
+            raise RuntimeError(f"Error in BlurInference.__init__: {e}") from e
+
 
         self.model = inference_model.eval()  # Set to evaluation mode
 
