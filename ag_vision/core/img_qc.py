@@ -10,10 +10,6 @@ from torchvision import transforms
 
 from huggingface_hub import hf_hub_download
 
-blur_path = importlib.resources.files('ag_vision').joinpath(
-    'model_weights', 'resnet50_blur', 'blur_weights_2.pth'
-)
-
 
 def convert_opencv_to_pil(opencv_image):
     """
@@ -74,7 +70,7 @@ class BlurInference:
             # Handle potential errors (e.g., file not found, connection error)
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
-            raise e  # Re-raise the exception to stop initialization
+            raise f"initialization, {e}"
 
         self.model = inference_model.eval()  # Set to evaluation mode
 
@@ -152,7 +148,7 @@ class AgImageType:
             # Handle potential errors (e.g., file not found, connection error)
             print(f"ERROR: Could not load model weights from Hugging Face Hub.")
             print(f"Please check REPO_ID '{HF_MODEL_REPO_ID}' and filename '{HF_WEIGHTS_FILENAME}'.")
-            raise e  # Re-raise the exception to stop initialization
+            raise f"initialization, {e}"
 
         self.model = inference_model.eval()  # Set to evaluation mode
 
