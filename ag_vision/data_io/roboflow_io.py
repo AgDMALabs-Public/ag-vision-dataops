@@ -38,51 +38,11 @@ def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotat
     )
 
 
-def upload_image_batch_to_roboflow_old(rf_project, annotation_type: str, project_path: str, task_name: str,
-                                       batch_name: str, tmp_copy: bool = True,
-                                       img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png']):
-    imgs_path = paths.annotation_image_path(project=project_path,
-                                            annotation_type=annotation_type,
-                                            task_name=task_name,
-                                            batch_name=batch_name,
-                                            f_name='none.jpg')
-
-    img_dir = os.path.dirname(imgs_path)
-    files = os.listdir(img_dir)
-    imgs = []
-    for f_name in files:
-        if os.path.splitext(f_name)[1] in img_extension:
-            imgs.append(img_dir + '/' + f_name)
-
-    for img in tqdm(imgs):
-        logging.info(f"Uploading {img} to Roboflow")
-        upload_image_to_roboflow(rf_project=rf_project,
-                                 batch_name=batch_name,
-                                 img_path=img,
-                                 annotation_path=None,
-                                 split='train',
-                                 tmp_copy=tmp_copy)
-
-
-def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
-                                   batch_name: str, split: str, tmp_copy: bool = True,
-                                   img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png']):
-    upload_annotation_batch_to_roboflow(rf_project=rf_project,
-                                        annotation_type=annotation_type,
-                                        project_path=project_path,
-                                        task_name=task_name,
-                                        batch_name=batch_name,
-                                        download_date='',
-                                        split=split,
-                                        tmp_copy=tmp_copy,
-                                        img_extension=img_extension,
-                                        annotation=False)
-
-
 def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                         batch_name: str, download_date: str, split: str, tmp_copy: bool = True,
                                         img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png'],
                                         annotation: bool = True):
+    # need to get the dir name with all the images.
     imgs_path = paths.annotation_image_path(project=project_path,
                                             annotation_type=annotation_type,
                                             task_name=task_name,
@@ -91,26 +51,29 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
     img_dir = os.path.dirname(imgs_path)
 
-    if annotation:
-        annotation_path = paths.annotation_path(project=project_path,
-                                                annotation_type=annotation_type,
-                                                task_name=task_name,
-                                                batch_name=batch_name,
-                                                download_date=download_date,
-                                                f_name='none.jpg')
-        annotation_dir = os.path.dirname(annotation_path)
+    need
+    annotation_path = paths.annotation_path(project=project_path,
+                                            annotation_type=annotation_type,
+                                            task_name=task_name,
+                                            batch_name=batch_name,
+                                            download_date=download_date,
+                                            f_name='none.jpg')
+    annotation_dir = os.path.dirname(annotation_path)
 
-    files = os.listdir(img_dir)
+    img_files = os.listdir(img_dir)
     imgs = []
 
-    for f_name in files:
+    for f_name in img_files:
         if os.path.splitext(f_name)[1] in img_extension:
             imgs.append(f_name)
+        else:
+            print(f'Skipping {f_name} as its file type is not supported.')
 
     for img in tqdm(imgs):
         print(f"Uploading {img} to Roboflow")
 
         if annotation:
+            # Assumes that the annotation is the same name but ends in .json
             annotation_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
 
             if os.path.exists(annotation_file):
@@ -129,44 +92,24 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
                                      tmp_copy=tmp_copy)
 
 
-def upload_annotation_df_to_roboflow(rf_project, annotation_df: pd.DataFrame, batch_name: str, img_col: str,
-                                     annotation_col: str, split_col: str, tmp_copy: bool = True):
-    """
-    Uploads annotations and corresponding images from a DataFrame to a Roboflow project.
-
-    This function iterates over each row in the given DataFrame and uploads the images and corresponding
-    annotations to a specified Roboflow project. Additional parameters such as a batch name and optional
-    temporary copy flag can be set to modify the behavior of the upload process.
-
-    Args:
-        rf_project: The target Roboflow project where the images and annotations will be uploaded.
-        annotation_df (pd.DataFrame): DataFrame containing the image paths, annotation paths, and split
-            information.
-        batch_name (str): Name to be assigned to the batch upload in Roboflow.
-        img_col (str): Name of the column in annotation_df that contains the file paths for the images.
-        annotation_col (str): Name of the column in annotation_df that contains the file paths for the
-            corresponding annotation files.
-        split_col (str): Name of the column in annotation_df that contains the dataset split
-            (e.g., train, valid, test).
-        tmp_copy (bool, default=True): If True, creates a temporary copy of the files before uploading.
-
-    Raises:
-        Specific errors raised by upload_images_to_roboflow function during the upload
-        process.
-    """
-    for idx, row in annotation_df.iterrows():
-        logging.info(f"Uploading {row[img_col]} to Roboflow")
-
-        upload_image_to_roboflow(rf_project=rf_project,
-                                 batch_name=batch_name,
-                                 img_path=row[img_col],
-                                 annotation_path=row[annotation_col],
-                                 split=row[split_col],
-                                 tmp_copy=tmp_copy)
+def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
+                                   batch_name: str, split: str, tmp_copy: bool = True,
+                                   img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png']):
+    upload_annotation_batch_to_roboflow(rf_project=rf_project,
+                                        annotation_type=annotation_type,
+                                        project_path=project_path,
+                                        task_name=task_name,
+                                        batch_name=batch_name,
+                                        download_date='',
+                                        split=split,
+                                        tmp_copy=tmp_copy,
+                                        img_extension=img_extension,
+                                        annotation=False)
 
 
 def download_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
-                                 task_name: str, batch_name: str, download_date: str, platform: str):
+                                 task_name: str, batch_name: str, download_date: str, platform: str,
+                                 save_images: bool = False):
     assert platform in ['db', 'local'], f"Platform {platform} is not supported. needs to be db or local"
 
     # get a list of images that in the batch
@@ -240,25 +183,3 @@ def download_batch_from_roboflow(rf_project, dataset_version: int, project_path:
 
     else:
         raise ValueError(f"Annotation type {annotation_type} is not supported.")
-
-
-def _save_annotation_job_metadata(task_name, batch_name, workspace_id, project_id, annotation_job_id):
-    """ """
-    annotation_job_dict = {'task_name': task_name,
-                           'batch_name': batch_name,
-                           'workspace_id': workspace_id,
-                           'project_id': project_id,
-                           'annotation_job_id': annotation_job_id}
-
-    return annotation_job_dict
-
-
-def _save_dataset_job_metadata(task_name, batch_name, workspace_id, project_id, version_id, export_format='coco'):
-    """ """
-    dataset_dict = {'task_name': task_name,
-                    'batch_name': batch_name,
-                    'workspace_id': workspace_id,
-                    'project_id': project_id,
-                    'version': version_id}
-
-    return dataset_dict

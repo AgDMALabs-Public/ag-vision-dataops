@@ -117,6 +117,7 @@ class AgImageType:
         self.class_names = sorted(['half-plot', 'junk', 'multi-plant', 'single-plant', 'whole-plot', 'field'])
         num_classes = len(self.class_names)
 
+        # This was specifically added to deal with spark implementation.
         if cache_dir:
             os.environ['HF_HOME'] = cache_dir
             os.environ['TORCH_HOME'] = cache_dir

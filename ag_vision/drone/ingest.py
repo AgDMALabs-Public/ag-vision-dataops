@@ -162,7 +162,7 @@ class DroneDataIngest(AgImageIngest):
 
         for idx, row in self.raw_ingest_df.iterrows():
             self.raw_ingest_df.loc[idx, 'dst_path'] = paths.drone_raw_flight_data(
-                drone_mission_dir=self.drone_mission_dir,
+                mission_dir=self.drone_mission_dir,
                 flight_date=self.flight_date,
                 camera=row['camera'],
                 file_name=str(row['file_name']))
@@ -180,12 +180,12 @@ class DroneDataIngest(AgImageIngest):
 
         for idx, row in self.plot_ingest_df.iterrows():
             self.plot_ingest_df.loc[idx, 'dst_path'] = paths.drone_flight_plot_image_path(
-                drone_mission_dir=self.drone_mission_dir,
+                mission_dir=self.drone_mission_dir,
                 flight_date=self.flight_date,
                 camera=row['camera'],
                 datetime=row['file_generation_datetime'],
                 plot_id=row['plot_id'],
-                file_name= str(row['file_name']))
+                image_name= str(row['file_name']))
 
     def save_flight_metadata_to_json_local(self):
         """
@@ -236,7 +236,7 @@ class DroneDataIngest(AgImageIngest):
         assert self.drone_mission_dir is not None, f"drone mission path cannot be None."
         assert '.geojson' in self.plot_boundary_key, f"plot boundary key must be a geojson file."
 
-        upload_path = paths.drone_plot_boundary_path(drone_mission_dir=self.drone_mission_dir)
+        upload_path = paths.drone_plot_boundary_path(mission_dir=self.drone_mission_dir)
         print(f"Saving to {upload_path}")
 
         dio.upload_file_with_progress(w=self.cloud_client,
@@ -260,7 +260,7 @@ class DroneDataIngest(AgImageIngest):
         assert self.drone_mission_dir is not None, f"drone mission path cannot be None."
         assert '.geojson' in self.plot_boundary_key, f"gcp key must be a txt file."
 
-        upload_path = paths.drone_mission_ground_control_point_path(drone_mission_dir=self.drone_mission_dir)
+        upload_path = paths.drone_mission_ground_control_point_path(mission_dir=self.drone_mission_dir)
         print(f"Saving to {upload_path}")
 
         dio.upload_file_with_progress(w=self.cloud_client,
@@ -293,31 +293,31 @@ class DroneDataIngest(AgImageIngest):
                 print(f'The error is: {e}')
                 self.raw_ingest_df.loc[idx, 'status'] = str(e)
 
-        def upload_plot_images_to_db(self):
-            """
-            Uploads raw flight data to a database, iterating through a DataFrame
-            and updating the status of each file upload.
+    def upload_plot_images_to_db(self):
+        """
+        Uploads raw flight data to a database, iterating through a DataFrame
+        and updating the status of each file upload.
 
-            Attributes:
-                ingest_df (DataFrame): A pandas DataFrame containing the details of files
-                to be uploaded. Each row should include 'src_path' and 'dst_path' columns
-                specifying the source path and destination path, respectively.
+        Attributes:
+            ingest_df (DataFrame): A pandas DataFrame containing the details of files
+            to be uploaded. Each row should include 'src_path' and 'dst_path' columns
+            specifying the source path and destination path, respectively.
 
-            Raises:
-                Exception: Captures and logs any exceptions occurring during file
-                uploads. The error details are recorded in the 'status' column of the
-                DataFrame.
-            """
-            for idx, row in tqdm(self.plot_ingest_df.iterrows()):
-                try:
-                    dio.upload_file_with_progress(w=self.cloud_client,
-                                                  local_file_path=row['src_path'],
-                                                  volume_path=row['dst_path'])
-                    self.plot_ingest_df.loc[idx, 'status'] = "success"
-                except Exception as e:
-                    print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
-                    print(f'The error is: {e}')
-                    self.plot_ingest_df.loc[idx, 'status'] = str(e)
+        Raises:
+            Exception: Captures and logs any exceptions occurring during file
+            uploads. The error details are recorded in the 'status' column of the
+            DataFrame.
+        """
+        for idx, row in tqdm(self.plot_ingest_df.iterrows()):
+            try:
+                dio.upload_file_with_progress(w=self.cloud_client,
+                                              local_file_path=row['src_path'],
+                                              volume_path=row['dst_path'])
+                self.plot_ingest_df.loc[idx, 'status'] = "success"
+            except Exception as e:
+                print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
+                print(f'The error is: {e}')
+                self.plot_ingest_df.loc[idx, 'status'] = str(e)
 
     def upload_orthomosaic_to_db(self, method: str, ortho_date: str, camera: str, file_name: str):
         """
@@ -342,7 +342,7 @@ class DroneDataIngest(AgImageIngest):
         assert self.orthomosaic_key is not None, f"Ortho key cannot be None."
         assert self.drone_mission_dir is not None, f"drone mission path cannot be None."
 
-        upload_path = paths.drone_flight_orthomosaic_path(drone_mission_dir=self.drone_mission_dir,
+        upload_path = paths.drone_flight_orthomosaic_path(mission_dir=self.drone_mission_dir,
                                                           flight_date=self.flight_date,
                                                           method=method,
                                                           ortho_date=ortho_date,
@@ -372,7 +372,7 @@ class DroneDataIngest(AgImageIngest):
         assert self.dem_key is not None, f"dem key cannot be None."
         assert self.drone_mission_dir is not None, f"drone mission path cannot be None."
 
-        upload_path = paths.drone_flight_dem_path(drone_mission_dir=self.drone_mission_dir,
+        upload_path = paths.drone_flight_dem_path(mission_dir=self.drone_mission_dir,
                                                   flight_date=self.flight_date,
                                                   method=method,
                                                   dem_date=dem_date,

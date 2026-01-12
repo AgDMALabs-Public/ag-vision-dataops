@@ -61,6 +61,45 @@ def create_annotation_batch(img_list: list, project_path: str, annotation_type: 
                                          file_name=img_metadata_path)
 
 
+def add_annotations_to_batch(annotations_df, project_path: str, annotation_type: str, task_name: str, batch_name: str,
+                            date: str, env: str = 'db'):
+    assert env in ['db']
+    assert annotation_type in cst.ANNOTATION_TYPE_LIST, f"{annotation_type} is not a valid annotation type. Valid types are {cst.ANNOTATION_TYPE_LIST}"
+
+    for col in ['image_path', 'annotation_path']:
+        assert col in annotations_df.columns, f"{col} needs to be a column in annotations_df"
+
+    for idx, row in annotations_df.iterrows():
+        extension = os.path.splitext(row['image_path'])[1]
+        new_img_id = str(uuid4())
+
+        new_img_path = paths.annotation_image_path(project=project_path,
+                                                   annotation_type=annotation_type,
+                                                   task_name=task_name,
+                                                   batch_name=batch_name,
+                                                   f_name=new_img_id + extension)
+
+        img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
+        metadata = {'parent_img_path': row['image_path'],
+                    'parent_img_id': new_img_id}
+
+        new_annotation_path = paths.annotation_path(project=project_path,
+                                                    annotation_type=annotation_type,
+                                                    task_name=task_name,
+                                                    batch_name=batch_name,
+                                                    download_date=date,
+                                                    f_name=new_img_id + '.json')
+
+        if env == 'db':
+            os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
+
+            shutil.copy(row['image_path'], new_img_path)
+            shutil.copy(row['annotation_path'], new_annotation_path)
+
+            dbio.save_json_to_databricks(data=metadata,
+                                         file_name=img_metadata_path)
+
+
 def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> dict:
     assert data['images'][index]['id'] == data['annotations'][index]['image_id']
 

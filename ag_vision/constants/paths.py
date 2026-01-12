@@ -228,10 +228,65 @@ def annotation_path(project: str, annotation_type: str, task_name: str, batch_na
     return f"{project}/annotations/{annotation_type}/{task_name}/{batch_name}/{download_date}/{f_name}"
 
 
+# ----------------------------------------------Synthetic Data---------------------------------------------------------#
+def synthetic_image_path(project: str, annotation_type: str, task_name: str, batch_name: str, f_name: str) -> str:
+    """
+    Generates the file path for an annotation image based on the specified parameters.
+
+    Parameters:
+    annotation_type (str): The type of annotation. Must be a valid type present in ANNOTATION_TYPE_LIST.
+    task_name (str): The name of the associated task.
+    batch_name (str): The name of the batch associated with the annotation.
+    f_name (str): The file name of the image.
+
+    Returns:
+    str: A string representing the generated file path for the annotation image.
+
+    Raises:
+    AssertionError: If the provided annotation_type is not in ANNOTATION_TYPE_LIST.
+    """
+    annotation_type = annotation_type.lower()
+    assert annotation_type.lower() in ANNOTATION_TYPE_LIST, f"Invalid annotation type: '{annotation_type}'. Available options are: {ANNOTATION_TYPE_LIST}"
+
+    task_name = task_name.lower()
+    batch_name = batch_name.lower()
+    f_name = f_name.lower()
+
+    return f"{project}/synthetic_data/{annotation_type}/{task_name}/{batch_name}/images/{f_name}"
+
+
+def synthetic_annotation_path(project: str, annotation_type: str, task_name: str, batch_name: str, download_date: str,
+                              f_name: str) -> str:
+    """
+    Generates a file path for synthetic data annotations based on the provided parameters.
+
+    Args:
+        annotation_type (str): The type of annotation (e.g., 'object_detection', 'instance_segmentation', 'classification).
+        task_name (str): The name of the task associated with the annotation.
+        batch_name (str): The name of the batch for the task.
+        download_date (str): The date when the data was generated. Formatted using _format_date_string.
+        f_name (str): The name of the file.
+
+    Returns:
+        str: A formatted string representing the path for the annotation in the form:
+             "{project}/synthetic_data/{annotation_type}/{task_name}/{batch_name}/{download_date}/{f_name}"
+    """
+    annotation_type = annotation_type.lower()
+    assert annotation_type.lower() in ANNOTATION_TYPE_LIST, f"Invalid annotation type: '{annotation_type}'. Available options are: {ANNOTATION_TYPE_LIST}"
+
+    task_name = task_name.lower()
+    batch_name = batch_name.lower()
+    f_name = f_name.lower()
+
+    download_date = _format_date_string(download_date)
+
+    return f"{project}/synthetic_data/{annotation_type}/{task_name}/{batch_name}/{download_date}/{f_name}"
+
+
 # ---------------------------------------------------Models------------------------------------------------------------#
 def model_weight_path(project: str, model_name: str, version: str, f_name: str) -> str:
     """
-    Generates a structured file path for model weights based on provided project, model name, version, and file name.
+    Generates a structured file path for model weights based on the provided project, model name, version, and file name.
     The model name, version, and file name are automatically converted to lower case during the path generation.
 
     Args:
@@ -620,7 +675,7 @@ def rover_scan_stiched_image_path(mission_dir: str, scan_date: str, method: str,
 
 
 def rover_scan_plot_image_path(mission_dir: str, scan_date: str, datetime: str, camera: str, plot_id: str,
-                                 file_name: str) -> str:
+                               file_name: str) -> str:
     """
     Generates a path string for a rover's plot image scan file based on the provided directory, date,
     camera, plot identifier, and filename. The function processes the given plot ID and file name
