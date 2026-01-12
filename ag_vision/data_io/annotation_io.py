@@ -102,7 +102,7 @@ def add_annotations_to_batch(annotations_df, project_path: str, annotation_type:
             # Copy the annotation to the new dir
             shutil.copy(row['annotation_path'], new_annotation_path)
 
-            
+
 def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> dict:
     assert data['images'][index]['id'] == data['annotations'][index]['image_id']
 

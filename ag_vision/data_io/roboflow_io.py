@@ -51,7 +51,6 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
     img_dir = os.path.dirname(imgs_path)
 
-    need
     annotation_path = paths.annotation_path(project=project_path,
                                             annotation_type=annotation_type,
                                             task_name=task_name,
