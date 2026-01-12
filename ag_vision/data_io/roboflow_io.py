@@ -78,7 +78,12 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
             annotation_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
 
             try:
-                annotation_data_list.append(dbio.read_json_from_databricks(file_name=annotation_file))
+                # assumes COCO Json format.
+                a = dbio.read_json_from_databricks(file_name=annotation_file)
+                for image_entry in a['images']:
+                    image_entry['file_name'] = img
+
+                annotation_data_list.append(a)
             except Exception as e:
                 print(f"Error reading annotation file {annotation_file}: {e}")
                 continue
