@@ -93,11 +93,17 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
     if annotation:
         print("Merging annotations ...")
         annotation_data = aio.merge_coco_jsons(data_list=annotation_data_list)
+        anno_file = annotation_dir + '/' + 'merged.json'
         dbio.save_json_to_databricks(data=annotation_data,
-                                     file_name=annotation_dir + '/' + 'merged.json')
+                                     file_name=anno_file)
+
         print("Uploading annotations ...")
-        rf_project.upload(annotation_path="merged.json",
-                          split=split)
+        upload_image_to_roboflow(rf_project=rf_project,
+                                 batch_name=batch_name,
+                                 img_path=img_dir + '/' + img,
+                                 annotation_path=anno_file,
+                                 split=split,
+                                 tmp_copy=tmp_copy)
 
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
