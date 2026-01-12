@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotation_path: str = None,
                              split: str = 'train', tmp_copy: bool = True):
     if tmp_copy:
-        tmp_img_path = f"/tmp/{os.path.basename(img_path)}"
+        tmp_img_path = f"/tmp/images/{os.path.basename(img_path)}"
         os.makedirs(os.path.dirname(tmp_img_path), exist_ok=True)
         shutil.copy(img_path, tmp_img_path)
 
         if annotation_path is not None:
-            tmp_annotation_path = f"/tmp/{os.path.basename(annotation_path)}"
+            tmp_annotation_path = f"/tmp/annotations/{os.path.basename(annotation_path)}"
             os.makedirs(os.path.dirname(tmp_annotation_path), exist_ok=True)
             shutil.copy(annotation_path, tmp_annotation_path)
         else:
