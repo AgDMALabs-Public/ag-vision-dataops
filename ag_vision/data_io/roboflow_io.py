@@ -16,22 +16,22 @@ logger = logging.getLogger(__name__)
 def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotation_path: str = None,
                              split: str = 'train', tmp_copy: bool = True):
     if tmp_copy:
-        temp_img_path = f"/tmp/{os.path.basename(img_path)}"
-        os.makedirs(os.path.dirname(temp_img_path), exist_ok=True)
-        shutil.copy(img_path, temp_img_path)
+        tmp_img_path = f"/tmp/{os.path.basename(img_path)}"
+        os.makedirs(os.path.dirname(tmp_img_path), exist_ok=True)
+        shutil.copy(img_path, tmp_img_path)
 
         if annotation_path is not None:
-            temp_annotation_path = f"/tmp/{os.path.basename(annotation_path)}"
-            os.makedirs(os.path.dirname(temp_annotation_path), exist_ok=True)
-            shutil.copy(annotation_path, temp_annotation_path)
+            tmp_annotation_path = f"/tmp/{os.path.basename(annotation_path)}"
+            os.makedirs(os.path.dirname(tmp_annotation_path), exist_ok=True)
+            shutil.copy(annotation_path, tmp_annotation_path)
         else:
             tmp_annotation_path = None
     else:
-        temp_img_path = img_path
+        tmp_img_path = img_path
         tmp_annotation_path = annotation_path
 
     rf_project.upload(
-        image_path=temp_img_path,
+        image_path=tmp_img_path,
         annotation_path=tmp_annotation_path,
         split=split,  # Optional: "train", "valid", or "test"
         batch_name=batch_name
@@ -60,6 +60,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
     annotation_dir = os.path.dirname(annotation_path)
 
     img_files = os.listdir(img_dir)
+    img_files = [x for x in img_files if '.json' not in x]
     imgs = []
 
     for f_name in img_files:
@@ -82,6 +83,8 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
                                          annotation_path=annotation_file,
                                          split=split,
                                          tmp_copy=tmp_copy)
+            else:
+                print(f"Annotation file {annotation_file} does not exist. Skipping {img}.")
         else:
             upload_image_to_roboflow(rf_project=rf_project,
                                      batch_name=batch_name,
