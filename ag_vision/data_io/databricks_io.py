@@ -136,12 +136,13 @@ def save_img_to_databricks(img: np.ndarray, file_name: str):
         print(f"Failed to save image from databricks: {e}")
 
 
-def read_json_from_databricks(file_name: str):
+def read_json_from_databricks(file_name: str) -> dict:
     try:
         with open(file_name, 'r') as f:
             return json.load(f)
     except Exception as e:
         print(f"Failed to read json from databricks: {e}")
+        return {}
 
 
 def save_json_to_databricks(data: dict, file_name: str):

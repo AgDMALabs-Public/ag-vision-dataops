@@ -116,3 +116,66 @@ def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> 
     new_data['images'][0]['file_name'] = new_data['images'][0]['extra']['name']
 
     return new_data
+
+
+def merge_coco_jsons(data_list: list[dict]):
+    """
+    Merges multiple single-image COCO JSON files into one unified COCO JSON file.
+
+    Args:
+        json_paths: List of paths to the individual JSON files.
+        output_path: Path where the merged JSON will be saved.
+    """
+    merged_data = {
+        "info": {},
+        "licenses": [],
+        "categories": [],
+        "images": [],
+        "annotations": []
+    }
+
+    # We need to re-index images and annotations to ensure IDs are unique and sequential
+    # in the merged file, although COCO IDs are strings or ints, duplicates are bad.
+    # However, if your source files essentially come from the SAME dataset split,
+    # the IDs might already be unique.
+    # To be safe, we will trust the IDs in the files if they look like UUIDs (strings),
+    # but if they are integers, we might need to offset them.
+    # Based on your example, they are strings/UUIDs, so we can just aggregate them.
+
+    seen_image_ids = set()
+    seen_annotation_ids = set()
+    seen_category_ids = set()
+
+    first_file = True
+
+    for data in data_list:
+        # 1. Copy Info & Licenses from the first file (assuming they are consistent)
+        if first_file:
+            merged_data['info'] = data.get('info', {})
+            merged_data['licenses'] = data.get('licenses', [])
+            first_file = False
+
+        # 2. Merge Categories (deduplicate by ID)
+        for cat in data.get('categories', []):
+            if cat['id'] not in seen_category_ids:
+                merged_data['categories'].append(cat)
+                seen_category_ids.add(cat['id'])
+
+        # 3. Merge Images (deduplicate by ID)
+        for img in data.get('images', []):
+            if img['id'] not in seen_image_ids:
+                merged_data['images'].append(img)
+                seen_image_ids.add(img['id'])
+            else:
+                logger.warning(f"Duplicate image ID found: {img['id']}")
+
+        # 4. Merge Annotations (deduplicate by ID)
+        for ann in data.get('annotations', []):
+            if ann['id'] not in seen_annotation_ids:
+                merged_data['annotations'].append(ann)
+                seen_annotation_ids.add(ann['id'])
+            else:
+                logger.warning(f"Duplicate annotation ID found: {ann['id']}")
+
+    # Write the result
+    return merged_data

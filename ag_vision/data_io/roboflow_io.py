@@ -69,6 +69,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
         else:
             print(f'Skipping {f_name} as its file type is not supported.')
 
+    annotation_data_list = []
     for img in tqdm(imgs):
         print(f"Uploading {img} to Roboflow")
 
@@ -76,22 +77,26 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
             # Assumes that the annotation is the same name but ends in .json
             annotation_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
 
-            if os.path.exists(annotation_file):
-                upload_image_to_roboflow(rf_project=rf_project,
-                                         batch_name=batch_name,
-                                         img_path=img_dir + '/' + img,
-                                         annotation_path=annotation_file,
-                                         split=split,
-                                         tmp_copy=tmp_copy)
-            else:
-                print(f"Annotation file {annotation_file} does not exist. Skipping {img}.")
-        else:
-            upload_image_to_roboflow(rf_project=rf_project,
-                                     batch_name=batch_name,
-                                     img_path=img_dir + '/' + img,
-                                     annotation_path=None,
-                                     split=split,
-                                     tmp_copy=tmp_copy)
+            try:
+                annotation_data_list.append(dbio.read_json_from_databricks(file_name=annotation_file))
+            except Exception as e:
+                print(f"Error reading annotation file {annotation_file}: {e}")
+                continue
+
+        upload_image_to_roboflow(rf_project=rf_project,
+                                 batch_name=batch_name,
+                                 img_path=img_dir + '/' + img,
+                                 annotation_path=None,
+                                 split=split,
+                                 tmp_copy=tmp_copy)
+
+    if annotation:
+        annotation_data = aio.merge_coco_jsons(data_list=annotation_data_list)
+        dbio.save_json_to_databricks(data=annotation_data,
+                                     file_name=annotation_dir + '/' + 'merged.json')
+
+        rf_project.upload(annotation_path="merged.json",
+                          split=split)
 
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
