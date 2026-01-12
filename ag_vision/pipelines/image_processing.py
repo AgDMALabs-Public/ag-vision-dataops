@@ -102,25 +102,28 @@ def add_core_metadata_to_ag_image(ag_image: AgImage) -> None:
 
 
 def generate_metadata_files_from_image_list(file_paths: list, platform: str, cloud_bucket: str = None,
-                                          image_type: str = None) -> None:
+                                          image_type: str = None, model_cache_dir=None) -> pd.DataFrame:
     """
 
     """
     file_paths = list(file_paths)
+    out_df_list = []
 
     try:
-        blur = iq.BlurInference()
+        blur = iq.BlurInference(cache_dir=model_cache_dir)
     except Exception as e:
         print(f'Failed to load blur model: {e}')
         blur = None
 
     try:
-        ait_model = iq.AgImageType()
+        ait_model = iq.AgImageType(cache_dir=model_cache_dir)
     except Exception as e:
         print(f'Failed to load AIT model: {e}')
         ait_model = None
 
     for file_path in tqdm(file_paths):
+        df = pd.DataFrame({'file_path': [file_path],
+                           'status': 'unknown'})
         try:
             ag_img = AgImage(img_key=file_path,
                              platform=platform,
@@ -148,32 +151,42 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
             add_core_metadata_to_ag_image(ag_image=ag_img)
 
             ag_img.save_metadata()
+            df['status'] = 'success'
+            out_df_list.append(df)
 
         except Exception as e:
             print(f'Fail, {e}')
+            df['status'] = str(e)
+            out_df_list.append(df)
+
+    out_df = pd.concat(out_df_list)
+
+    return out_df
 
 
-def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None, model_cache_dir=None, model_local_dir: None = None):
+def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None, model_cache_dir=None):
+    # This helps log the errors or the inference.
     be = 'success'
     me = 'success'
+
+    # initialize the models if they are none
     if blur_class is None:
         try:
-            blur_class = iq.BlurInference(cache_dir=model_cache_dir,
-                                          local_dir=model_local_dir)
+            blur_class = iq.BlurInference(cache_dir=model_cache_dir)
         except Exception as e:
             be = str(e)
             blur_class = None
 
     if ait_class is None:
         try:
-            ait_class = iq.AgImageType(cache_dir=model_cache_dir,
-                                       local_dir=model_local_dir)
+            ait_class = iq.AgImageType(cache_dir=model_cache_dir)
         except Exception as e:
             me = str(e)
             ait_class = None
 
     out_df_list = []
 
+    # add the data to the metadata
     for file_path in tqdm(file_paths):
         df = pd.DataFrame({'file_path': [file_path],
                            'status': 'unknown'})
@@ -212,7 +225,9 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur
             df['status'] = str(e)
             out_df_list.append(df)
 
+    # create the status df to return to the user.
     out_df = pd.concat(out_df_list)
     out_df['be'] = be
     out_df['me'] = me
+
     return out_df
