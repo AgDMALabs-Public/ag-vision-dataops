@@ -92,14 +92,17 @@ def add_annotations_to_batch(annotations_df, project_path: str, annotation_type:
 
         if env == 'db':
             os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
+            os.makedirs(os.path.dirname(new_annotation_path), exist_ok=True)
 
+            # copy the image
             shutil.copy(row['image_path'], new_img_path)
-            shutil.copy(row['annotation_path'], new_annotation_path)
-
+            # save the new image metadata
             dbio.save_json_to_databricks(data=metadata,
                                          file_name=img_metadata_path)
+            # Copy the annotation to the new dir
+            shutil.copy(row['annotation_path'], new_annotation_path)
 
-
+            
 def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> dict:
     assert data['images'][index]['id'] == data['annotations'][index]['image_id']
 
