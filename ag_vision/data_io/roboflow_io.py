@@ -44,7 +44,33 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
                                         batch_name: str, download_date: str, split: str, tmp_copy: bool = True,
                                         img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png'],
                                         annotation: bool = True):
-    # need to get the dir name with all the images.
+    """
+    Uploads a batch of images and their annotations to Roboflow. The function processes
+    a given directory of images and optionally their associated annotations in COCO JSON
+    format. Images and annotations are prepared, merged if required, and then uploaded
+    to a Roboflow project.
+
+    Args:
+        rf_project: The name of the Roboflow project where the images and annotations
+            will be uploaded.
+        annotation_type: The type of annotation format used in the project
+            (e.g., bounding boxes, segmentation).
+        project_path: The path to the project directory containing images and associated
+            annotations.
+        task_name: The name of the task related to the given batch of images
+            and annotations.
+        batch_name: The name of the batch of images and annotations being processed.
+        download_date: The download date of the annotation files to be processed
+            and uploaded.
+        split: The data split name used, such as train, validation, or test.
+        tmp_copy: Boolean flag indicating whether or not to temporarily copy/prepare
+            files before uploading. Defaults to True.
+        img_extension: A list of valid image file extensions supported by the function
+            during processing. Defaults to ['.jpg', '.jpeg', '.tiff', '.png'].
+        annotation: Boolean flag indicating whether annotation files should be processed
+            and uploaded along with images. Defaults to True.
+    """
+    # Get the dir name with all the images.
     imgs_path = paths.annotation_image_path(project=project_path,
                                             annotation_type=annotation_type,
                                             task_name=task_name,

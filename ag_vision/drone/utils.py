@@ -1,5 +1,6 @@
 import numpy as np
 
+import rasterio
 from rasterio.features import geometry_mask
 from shapely.geometry import mapping
 
