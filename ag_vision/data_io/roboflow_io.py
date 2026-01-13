@@ -1,6 +1,8 @@
 import os
 import shutil
 import json
+
+from sympy.codegen import Print
 from tqdm import tqdm
 import pandas as pd
 from ag_vision.constants import paths
@@ -70,45 +72,49 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
             print(f'Skipping {f_name} as its file type is not supported.')
 
     annotation_data_list = []
-    for img in tqdm(imgs):
-        print(f"Uploading {img} to Roboflow")
-
-        if annotation:
+    if annotation:
+        Print("Generating Merged Annotation File...")
+        for img in tqdm(imgs):
             # Assumes that the annotation is the same name but ends in .json
-            annotation_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
+            a_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
 
             try:
                 # assumes COCO Json format.
-                a = dbio.read_json_from_databricks(file_name=annotation_file)
+                a = dbio.read_json_from_databricks(file_name=a_file)
                 for image_entry in a['images']:
                     image_entry['file_name'] = img
 
                 annotation_data_list.append(a)
             except Exception as e:
-                print(f"Error reading annotation file {annotation_file}: {e}")
+                print(f"Error reading annotation file {a_file}: {e}")
                 continue
 
-        upload_image_to_roboflow(rf_project=rf_project,
-                                 batch_name=batch_name,
-                                 img_path=img_dir + '/' + img,
-                                 annotation_path=None,
-                                 split=split,
-                                 tmp_copy=tmp_copy)
-
-    if annotation:
         print("Merging annotations ...")
-        annotation_data = aio.merge_coco_jsons(data_list=annotation_data_list)
-        anno_file = annotation_dir + '/' + 'merged.json'
-        dbio.save_json_to_databricks(data=annotation_data,
-                                     file_name=anno_file)
+        merged_data = aio.merge_coco_jsons(data_list=annotation_data_list)
+        merged_file = annotation_dir + '/' + 'merged.json'
+        dbio.save_json_to_databricks(data=merged_data,
+                                     file_name=merged_file)
 
-        print("Uploading annotations ...")
-        upload_image_to_roboflow(rf_project=rf_project,
+        print("Uploading Images and Annotations ...")
+        for img in tqdm(imgs):
+            print(f"Uploading {img} and annotation to Roboflow")
+            upload_image_to_roboflow(rf_project=rf_project,
                                  batch_name=batch_name,
                                  img_path=img_dir + '/' + img,
-                                 annotation_path=anno_file,
+                                 annotation_path=merged_file,
                                  split=split,
                                  tmp_copy=tmp_copy)
+
+    else:
+        for img in tqdm(imgs):
+            print(f"Uploading {img} to Roboflow")
+
+            upload_image_to_roboflow(rf_project=rf_project,
+                                     batch_name=batch_name,
+                                     img_path=img_dir + '/' + img,
+                                     annotation_path=None,
+                                     split=split,
+                                     tmp_copy=tmp_copy)
 
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
