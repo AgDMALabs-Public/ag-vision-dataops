@@ -38,27 +38,30 @@ def create_annotation_batch(img_list: list, project_path: str, annotation_type: 
     assert annotation_type in cst.ANNOTATION_TYPE_LIST, f"{annotation_type} is not a valid annotation type. Valid types are {cst.ANNOTATION_TYPE_LIST}"
 
     for img_name in tqdm(img_list):
-        extension = os.path.splitext(img_name)[1]
-        new_img_id = str(uuid4())
+        try:
+            extension = os.path.splitext(img_name)[1]
+            new_img_id = str(uuid4())
 
-        new_img_path = paths.annotation_image_path(project=project_path,
-                                                   annotation_type=annotation_type,
-                                                   task_name=task_name,
-                                                   batch_name=batch_name,
-                                                   f_name=new_img_id + extension)
+            new_img_path = paths.annotation_image_path(project=project_path,
+                                                       annotation_type=annotation_type,
+                                                       task_name=task_name,
+                                                       batch_name=batch_name,
+                                                       f_name=new_img_id + extension)
 
-        img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
+            img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
 
-        metadata = {'parent_img_path': img_name,
-                    'parent_img_id': new_img_id}
+            metadata = {'parent_img_path': img_name,
+                        'parent_img_id': new_img_id}
 
-        if env == 'db':
-            os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
+            if env == 'db':
+                os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
 
-            shutil.copy(img_name, new_img_path)
+                shutil.copy(img_name, new_img_path)
 
-            dbio.save_json_to_databricks(data=metadata,
-                                         file_name=img_metadata_path)
+                dbio.save_json_to_databricks(data=metadata,
+                                             file_name=img_metadata_path)
+        except Exception as e:
+            print(f"Error processing image {img_name}: {e}")
 
 
 def add_annotations_to_batch(annotations_df, project_path: str, annotation_type: str, task_name: str, batch_name: str,
@@ -70,37 +73,40 @@ def add_annotations_to_batch(annotations_df, project_path: str, annotation_type:
         assert col in annotations_df.columns, f"{col} needs to be a column in annotations_df"
 
     for idx, row in annotations_df.iterrows():
-        extension = os.path.splitext(row['image_path'])[1]
-        new_img_id = str(uuid4())
+        try:
+            extension = os.path.splitext(row['image_path'])[1]
+            new_img_id = str(uuid4())
 
-        new_img_path = paths.annotation_image_path(project=project_path,
-                                                   annotation_type=annotation_type,
-                                                   task_name=task_name,
-                                                   batch_name=batch_name,
-                                                   f_name=new_img_id + extension)
+            new_img_path = paths.annotation_image_path(project=project_path,
+                                                       annotation_type=annotation_type,
+                                                       task_name=task_name,
+                                                       batch_name=batch_name,
+                                                       f_name=new_img_id + extension)
 
-        img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
-        metadata = {'parent_img_path': row['image_path'],
-                    'parent_img_id': new_img_id}
+            img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
+            metadata = {'parent_img_path': row['image_path'],
+                        'parent_img_id': new_img_id}
 
-        new_annotation_path = paths.annotation_path(project=project_path,
-                                                    annotation_type=annotation_type,
-                                                    task_name=task_name,
-                                                    batch_name=batch_name,
-                                                    download_date=date,
-                                                    f_name=new_img_id + '.json')
+            new_annotation_path = paths.annotation_path(project=project_path,
+                                                        annotation_type=annotation_type,
+                                                        task_name=task_name,
+                                                        batch_name=batch_name,
+                                                        download_date=date,
+                                                        f_name=new_img_id + '.json')
 
-        if env == 'db':
-            os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
-            os.makedirs(os.path.dirname(new_annotation_path), exist_ok=True)
+            if env == 'db':
+                os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
+                os.makedirs(os.path.dirname(new_annotation_path), exist_ok=True)
 
-            # copy the image
-            shutil.copy(row['image_path'], new_img_path)
-            # save the new image metadata
-            dbio.save_json_to_databricks(data=metadata,
-                                         file_name=img_metadata_path)
-            # Copy the annotation to the new dir
-            shutil.copy(row['annotation_path'], new_annotation_path)
+                # copy the image
+                shutil.copy(row['image_path'], new_img_path)
+                # save the new image metadata
+                dbio.save_json_to_databricks(data=metadata,
+                                             file_name=img_metadata_path)
+                # Copy the annotation to the new dir
+                shutil.copy(row['annotation_path'], new_annotation_path)
+        except Exception as e:
+            
 
 
 def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> dict:
