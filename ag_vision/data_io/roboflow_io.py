@@ -126,24 +126,29 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
         print("Uploading Images and Annotations ...")
         for img in tqdm(imgs):
-            print(f"Uploading {img} and annotation to Roboflow")
-            upload_image_to_roboflow(rf_project=rf_project,
-                                 batch_name=batch_name,
-                                 img_path=img_dir + '/' + img,
-                                 annotation_path=merged_file,
-                                 split=split,
-                                 tmp_copy=tmp_copy)
+            try:
+                print(f"Uploading {img} and annotation to Roboflow")
+                upload_image_to_roboflow(rf_project=rf_project,
+                                     batch_name=batch_name,
+                                     img_path=img_dir + '/' + img,
+                                     annotation_path=merged_file,
+                                     split=split,
+                                     tmp_copy=tmp_copy)
+            except Exception as e:
+                print(f"Error uploading {img}: {e}")
 
     else:
         for img in tqdm(imgs):
-            print(f"Uploading {img} to Roboflow")
-
-            upload_image_to_roboflow(rf_project=rf_project,
-                                     batch_name=batch_name,
-                                     img_path=img_dir + '/' + img,
-                                     annotation_path=None,
-                                     split=split,
-                                     tmp_copy=tmp_copy)
+            try:
+                print(f"Uploading {img} to Roboflow")
+                upload_image_to_roboflow(rf_project=rf_project,
+                                         batch_name=batch_name,
+                                         img_path=img_dir + '/' + img,
+                                         annotation_path=None,
+                                         split=split,
+                                         tmp_copy=tmp_copy)
+            except Exception as e:
+                print(f"Error uploading {img}: {e}")
 
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
