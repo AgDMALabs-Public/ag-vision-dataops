@@ -42,7 +42,7 @@ def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotat
 
 def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                         batch_name: str, download_date: str, split: str, tmp_copy: bool = True,
-                                        img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png'],
+                                        img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png', '.webp'],
                                         annotation: bool = True):
     """
     Uploads a batch of images and their annotations to Roboflow. The function processes
@@ -148,7 +148,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                    batch_name: str, split: str, tmp_copy: bool = True,
-                                   img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png']):
+                                   img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png', '.webp']):
     upload_annotation_batch_to_roboflow(rf_project=rf_project,
                                         annotation_type=annotation_type,
                                         project_path=project_path,
