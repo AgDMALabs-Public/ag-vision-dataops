@@ -79,13 +79,16 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
     img_dir = os.path.dirname(imgs_path)
 
-    annotation_path = paths.annotation_path(project=project_path,
-                                            annotation_type=annotation_type,
-                                            task_name=task_name,
-                                            batch_name=batch_name,
-                                            download_date=download_date,
-                                            f_name='none.jpg')
-    annotation_dir = os.path.dirname(annotation_path)
+    if download_date is not None:
+        annotation_path = paths.annotation_path(project=project_path,
+                                                annotation_type=annotation_type,
+                                                task_name=task_name,
+                                                batch_name=batch_name,
+                                                download_date=download_date,
+                                                f_name='none.jpg')
+        annotation_dir = os.path.dirname(annotation_path)
+    else:
+        annotation_dir = '/'
 
     img_files = os.listdir(img_dir)
     img_files = [x for x in img_files if '.json' not in x]
@@ -151,7 +154,7 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
                                         project_path=project_path,
                                         task_name=task_name,
                                         batch_name=batch_name,
-                                        download_date='',
+                                        download_date=None,
                                         split=split,
                                         tmp_copy=tmp_copy,
                                         img_extension=img_extension,
