@@ -164,25 +164,24 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
     return out_df
 
 
-def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, blur_class = None, ait_class= None, model_cache_dir=None):
+def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, model_cache_dir=None):
     # This helps log the errors or the inference.
     be = 'success'
     me = 'success'
 
     # initialize the models if they are none
-    if blur_class is None:
-        try:
-            blur_class = iq.BlurInference(cache_dir=model_cache_dir)
-        except Exception as e:
-            be = str(e)
-            blur_class = None
 
-    if ait_class is None:
-        try:
-            ait_class = iq.AgImageType(cache_dir=model_cache_dir)
-        except Exception as e:
-            me = str(e)
-            ait_class = None
+    try:
+        blur_class = iq.BlurInference(cache_dir=model_cache_dir)
+    except Exception as e:
+        be = str(e)
+        blur_class = None
+
+    try:
+        ait_class = iq.AgImageType(cache_dir=model_cache_dir)
+    except Exception as e:
+        me = str(e)
+        ait_class = None
 
     out_df_list = []
 
