@@ -44,7 +44,7 @@ class BlurInference:
             os.environ['TORCH_HOME'] = cache_dir
 
         HF_MODEL_REPO_ID = "dwilli37/ag_image_blur_detection"
-        HF_WEIGHTS_FILENAME = "blur_weights_2.pth"
+        HF_WEIGHTS_FILENAME = "blur_weights_6.pth"
 
         # 1. Initialize the model architecture
         inference_model = torchvision.models.resnet50(weights=None)
@@ -102,7 +102,7 @@ class BlurInference:
         return {
             'pred': self.class_names[predicted_class_idx],
             'prob': probabilities[predicted_class_idx].item(),
-            'version': 2,
+            'version': 6,
             'id': 'dwilli37/ag_image_blur_detection'
         }
 
@@ -123,7 +123,7 @@ class AgImageType:
             os.environ['TORCH_HOME'] = cache_dir
 
         HF_MODEL_REPO_ID = "dwilli37/ag_image_type"
-        HF_WEIGHTS_FILENAME = "version_1.pth"
+        HF_WEIGHTS_FILENAME = "ait_version_3.pth"
 
         # 1. Initialize the model architecture
         inference_model = torchvision.models.resnet50(weights=None)
@@ -182,7 +182,7 @@ class AgImageType:
         return {
             'pred': self.class_names[predicted_class_idx],
             'prob': probabilities[predicted_class_idx].item(),
-            'version': 1,
+            'version': 3,
             'id': 'dwilli37/ag_image_type'
         }
 
