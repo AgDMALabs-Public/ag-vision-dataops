@@ -114,7 +114,7 @@ class AgImageType:
         This is the expensive setup that should only be run once.
         """
         self.device = device if device else torch.device("cpu")
-        self.class_names = sorted(['half-plot', 'junk', 'multi-plant', 'single-plant', 'whole-plot', 'field'])
+        self.class_names = sorted(["fallow", "field", "grain", "half-plot", "junk", "multi-plant", "partial-plant", "single-plant", "tubers", "whole-plot"])
         num_classes = len(self.class_names)
 
         # This was specifically added to deal with spark implementation.
