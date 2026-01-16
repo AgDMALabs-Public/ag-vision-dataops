@@ -10,7 +10,7 @@ from ag_vision.data_io import local_io as lio
 from ag_vision.data_io import databricks_io as dio
 from open_aglabs.rover.models import RoverScan
 
-RAW_INGEST_COLS = ['src_path', 'file_type', 'camera']
+RAW_INGEST_COLS = ['src_path', 'camera']
 PLOT_INGEST_COLS = ['src_path', 'plot_id', 'camera']
 STICHED_INGEST_COLS = ['src_path', 'camera', 'method', 'stiched_date']
 
@@ -98,7 +98,7 @@ class RoverDataIngest(AgImageIngest):
                                                                                 crop=crop,
                                                                                 time_of_year=time_of_year)
 
-    def generate_raw_ingest_df(self, file_list):
+    def generate_raw_ingest_df(self, file_list, camera):
         """
         Generates and initializes an ingestion DataFrame with metadata from the given list of file paths.
         The DataFrame includes essential columns such as source path, file name, and image extension,
@@ -107,11 +107,12 @@ class RoverDataIngest(AgImageIngest):
 
         Args:
             file_list (List[str]): List of file paths to generate the ingestion DataFrame.
-
+            camera (str): Camera used for the scan.
         Returns:
             None
         """
         self.raw_ingest_df = pd.DataFrame({'src_path': file_list})
+        self.raw_ingest_df['camera'] = camera
         self.raw_ingest_df['file_name'] = self.raw_ingest_df['src_path'].apply(lambda x: os.path.basename(x))
         self.raw_ingest_df['img_ext'] = self.raw_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
 
@@ -138,15 +139,15 @@ class RoverDataIngest(AgImageIngest):
             assert col in self.stiched_ingest_df.columns, f"{col} is not in the raw ingest df, it needs {STICHED_INGEST_COLS}"
 
         self.stiched_ingest_df['file_name'] = self.stiched_ingest_df['src_path'].apply(lambda x: os.path.basename(x))
-        self.stiched_ingest_df['img_ext'] = self.stiched_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
+        self.stiched_ingest_df['file_ext'] = self.stiched_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
 
         if generate_uuid:
             self.stiched_ingest_df['new_file_name'] = self.stiched_ingest_df['file_ext'].apply(
-                lambda x: str(uuid.uuid4()) + '.' + x)
+                lambda x: str(uuid.uuid4()) + x)
         else:
             self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['file_name']
 
-        self.stiched_ingest_df['new_file_name'] = self.stiched_ingest_df['new_file_name'].str.lower()
+        self.stiched_ingest_df['file_name'] = self.stiched_ingest_df['new_file_name'].str.lower()
 
     def generate_plot_ingest_df(self, df: pd.DataFrame, generate_uuid: bool = True):
         """
@@ -167,15 +168,15 @@ class RoverDataIngest(AgImageIngest):
             assert col in self.plot_ingest_df.columns, f"{col} is not in the raw ingest df, it needs {PLOT_INGEST_COLS}"
 
         self.plot_ingest_df['file_name'] = self.plot_ingest_df['src_path'].apply(lambda x: os.path.basename(x))
-        self.plot_ingest_df['img_ext'] = self.plot_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
+        self.plot_ingest_df['file_ext'] = self.plot_ingest_df['file_name'].apply(lambda x: os.path.splitext(x)[1])
 
         if generate_uuid:
             self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['file_ext'].apply(
-                lambda x: str(uuid.uuid4()) + '.' + x)
+                lambda x: str(uuid.uuid4()) + x)
         else:
             self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['file_name']
 
-        self.plot_ingest_df['new_file_name'] = self.plot_ingest_df['new_file_name'].str.lower()
+        self.plot_ingest_df['file_name'] = self.plot_ingest_df['new_file_name'].str.lower()
 
     def generate_raw_image_dst_path_name(self):
         """
@@ -206,8 +207,8 @@ class RoverDataIngest(AgImageIngest):
         assert self.rover_mission_dir is not None, "rover_mission_dir cannot be None."
         assert self.scan_date is not None, "scan_date cannot be None."
 
-        for idx, row in self.raw_ingest_df.iterrows():
-            self.raw_ingest_df.loc[idx, 'dst_path'] = paths.rover_scan_stiched_image_path(
+        for idx, row in self.stiched_ingest_df.iterrows():
+            self.stiched_ingest_df.loc[idx, 'dst_path'] = paths.rover_scan_stiched_image_path(
                 mission_dir=self.rover_mission_dir,
                 scan_date=self.scan_date,
                 method=row['method'],
@@ -235,7 +236,7 @@ class RoverDataIngest(AgImageIngest):
                 plot_id=row['plot_id'],
                 file_name=str(row['file_name']))
 
-    def save_scan_metadata_to_json_local(self):
+    def save_metadata_to_json_local(self):
         """
         Saves scan metadata to a local JSON file.
 
@@ -261,14 +262,14 @@ class RoverDataIngest(AgImageIngest):
         assert self.rover_mission_dir is not None, "rover_mission_dir cannot be None."
         assert self.scan_metadata_key is not None, "scan_metadata_key cannot be None."
 
-        upload_path = paths.rover_scan_details_path(self.rover_mission_dir,
+        upload_path = paths.rover_scan_details_path(mission_dir=self.rover_mission_dir,
                                                     scan_date=self.scan_date)
 
         dio.upload_file_with_progress(w=self.cloud_client,
                                       local_file_path=self.scan_metadata_key,
                                       volume_path=upload_path)
 
-    def upload_plot_boundary_to_db(self):
+    def upload_scan_plot_boundary_to_db(self):
         """
         Uploads a plot boundary file to a specified database using a cloud client.
 
@@ -284,35 +285,11 @@ class RoverDataIngest(AgImageIngest):
         assert self.rover_mission_dir is not None, f"rover mission path cannot be None."
         assert '.geojson' in self.plot_boundary_key, f"plot boundary key must be a geojson file."
 
-        upload_path = paths.rover_plot_boundary_path(rover_mission_dir=self.rover_mission_dir)
+        upload_path = paths.rover_plot_boundary_path(mission_dir=self.rover_mission_dir)
         print(f"Saving to {upload_path}")
 
         dio.upload_file_with_progress(w=self.cloud_client,
                                       local_file_path=self.plot_boundary_key,
-                                      volume_path=upload_path)
-
-    def upload_gcp_to_db(self):
-        """
-        Uploads a ground control point file to a specific location in a database using a cloud client.
-
-        This method ensures that necessary parameters related to plot boundary and rover mission
-        are provided and valid. It uploads the file to a computed path using a cloud client's
-        upload functionality with progress tracking.
-
-        Raises:
-        AssertionError: If `plot_boundary_key` is None.
-        AssertionError: If `rover_mission_dir` is None.
-        AssertionError: If `plot_boundary_key` does not contain '.geojson'.
-        """
-        assert self.plot_boundary_key is not None, f"plot boundary key cannot be None."
-        assert self.rover_mission_dir is not None, f"rover mission path cannot be None."
-        assert '.geojson' in self.plot_boundary_key, f"gcp key must be a txt file."
-
-        upload_path = paths.rover_mission_ground_control_point_path(rover_mission_dir=self.rover_mission_dir)
-        print(f"Saving to {upload_path}")
-
-        dio.upload_file_with_progress(w=self.cloud_client,
-                                      local_file_path=self.gcp_key,
                                       volume_path=upload_path)
 
     def upload_raw_scan_data_to_db(self):
@@ -341,62 +318,55 @@ class RoverDataIngest(AgImageIngest):
                 print(f'The error is: {e}')
                 self.raw_ingest_df.loc[idx, 'status'] = str(e)
 
-        def upload_plot_images_to_db(self):
-            """
-            Uploads raw scan data to a database, iterating through a DataFrame
-            and updating the status of each file upload.
-
-            Attributes:
-                ingest_df (DataFrame): A pandas DataFrame containing the details of files
-                to be uploaded. Each row should include 'src_path' and 'dst_path' columns
-                specifying the source path and destination path, respectively.
-
-            Raises:
-                Exception: Captures and logs any exceptions occurring during file
-                uploads. The error details are recorded in the 'status' column of the
-                DataFrame.
-            """
-            for idx, row in tqdm(self.plot_ingest_df.iterrows()):
-                try:
-                    dio.upload_file_with_progress(w=self.cloud_client,
-                                                  local_file_path=row['src_path'],
-                                                  volume_path=row['dst_path'])
-                    self.plot_ingest_df.loc[idx, 'status'] = "success"
-                except Exception as e:
-                    print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
-                    print(f'The error is: {e}')
-                    self.plot_ingest_df.loc[idx, 'status'] = str(e)
-
-    def upload_stiched_images_to_db(self, method: str, ortho_date: str, camera: str, file_name: str):
+    def upload_plot_images_to_db(self):
         """
-        Uploads an orthomosaic image to the database using the specified parameters. Ensures that
-        the necessary keys and paths are not None before proceeding with the upload. The upload
-        path is dynamically constructed based on the provided method, orthomosaic date, and image
-        name.
+        Uploads raw scan data to a database, iterating through a DataFrame
+        and updating the status of each file upload.
 
-        Parameters:
-            method: str
-                The processing method used for orthomosaic generation Eg: Agisoft.
-            ortho_date: str
-                The date the orthomosaic image was generatedin string format.
-            file_name: str
-                file_name: The name used to save the file in the cloud.
-            camera: str
-                camera: The camera used for the orthomosaic image eg: rgn. multi-spec, thermal.
+        Attributes:
+            ingest_df (DataFrame): A pandas DataFrame containing the details of files
+            to be uploaded. Each row should include 'src_path' and 'dst_path' columns
+            specifying the source path and destination path, respectively.
 
         Raises:
-            AssertionError: If orthomosaic_key or rover_mission_dir is None.
+            Exception: Captures and logs any exceptions occurring during file
+            uploads. The error details are recorded in the 'status' column of the
+            DataFrame.
         """
-        assert self.rover_mission_dir is not None, f"rover mission path cannot be None."
+        for idx, row in tqdm(self.plot_ingest_df.iterrows()):
+            try:
+                dio.upload_file_with_progress(w=self.cloud_client,
+                                              local_file_path=row['src_path'],
+                                              volume_path=row['dst_path'])
+                self.plot_ingest_df.loc[idx, 'status'] = "success"
+            except Exception as e:
+                print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
+                print(f'The error is: {e}')
+                self.plot_ingest_df.loc[idx, 'status'] = str(e)
 
-        upload_path = paths.rover_scan_stiched_path(rover_mission_dir=self.rover_mission_dir,
-                                                    scan_date=self.scan_date,
-                                                    method=method,
-                                                    ortho_date=ortho_date,
-                                                    camera=camera,
-                                                    image_name=file_name)
-        print(f"Saving to {upload_path}")
+    def upload_stiched_images_to_db(self):
+        """
+        Uploads raw scan data to a database, iterating through a DataFrame
+        and updating the status of each file upload.
 
-        dio.upload_file_with_progress(w=self.cloud_client,
-                                      local_file_path=self.orthomosaic_key,
-                                      volume_path=upload_path)
+        Attributes:
+            ingest_df (DataFrame): A pandas DataFrame containing the details of files
+            to be uploaded. Each row should include 'src_path' and 'dst_path' columns
+            specifying the source path and destination path, respectively.
+
+        Raises:
+            Exception: Captures and logs any exceptions occurring during file
+            uploads. The error details are recorded in the 'status' column of the
+            DataFrame.
+        """
+        for idx, row in tqdm(self.stiched_ingest_df.iterrows()):
+            try:
+                dio.upload_file_with_progress(w=self.cloud_client,
+                                              local_file_path=row['src_path'],
+                                              volume_path=row['dst_path'])
+                self.stiched_ingest_df.loc[idx, 'status'] = "success"
+
+            except Exception as e:
+                print(f'Failed to upload file {row["src_path"]} --TO--: {row["dst_path"]}')
+                print(f'The error is: {e}')
+                self.stiched_ingest_df.loc[idx, 'status'] = str(e)

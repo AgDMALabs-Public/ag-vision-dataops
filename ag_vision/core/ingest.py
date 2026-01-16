@@ -84,7 +84,3 @@ class AgImageIngest:
                                                                   crop=row['crop'],
                                                                   country=row['country'],
                                                                   time_of_year=str(row['time_of_year']))
-
-    def validate_ingest_df(self):
-        pass
-
