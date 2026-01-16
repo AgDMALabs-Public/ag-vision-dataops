@@ -591,7 +591,7 @@ def rover_plot_boundary_path(mission_dir: str) -> str:
     Returns:
         str: The full file path to the plot boundary GeoJSON file.
     """
-    return f"{rover_mission_dir}/field_data/plot_boundary.geojson"
+    return f"{mission_dir}/field_data/plot_boundary.geojson"
 
 
 def rover_scan_details_path(mission_dir: str, scan_date: str) -> str:

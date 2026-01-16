@@ -1,7 +1,9 @@
 import numpy as np
 from ag_vision.core.image import AgImage
-from open_aglabs.image.models import Image
+from open_aglabs.image.models import AgImageModel
 import logging
+
+logger = logging.getLogger(__name__)
 
 class DroneImage(AgImage):
     def __init__(self, platform: str = None, cloud_bucket: str = None, img_key: str = None,
@@ -21,7 +23,7 @@ class DroneImage(AgImage):
                 "acquisition_properties": {},
                 "image_quality": {}
             }
-            self.metadata = Image(**metadata_dict)
+            self.metadata = AgImageModel(**metadata_dict)
             self.add_image_id_to_metadata()
         else:
             logger.warning(f'The image key is None and is needed to initialize the metadata.')
