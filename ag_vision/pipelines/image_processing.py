@@ -1,6 +1,5 @@
 import pandas as pd
 import logging
-from tqdm import tqdm
 import os
 from ag_vision.core.image import AgImage
 from ag_vision.constants import paths as pth
@@ -80,7 +79,7 @@ def generate_images_table(img_list: list, platform: str, project_index: int = 6)
 
     rows = list(img_df[['image_id', 'file_path']].itertuples(index=False))
     out_list = []
-    for row in tqdm(rows):
+    for row in rows:
         out_list.append(process_single_image(image_id=row[0],
                                              file_path=row[1],
                                              platform=platform))
@@ -121,7 +120,7 @@ def generate_metadata_files_from_image_list(file_paths: list, platform: str, clo
         print(f'Failed to load AIT model: {e}')
         ait_model = None
 
-    for file_path in tqdm(file_paths):
+    for file_path in file_paths:
         df = pd.DataFrame({'file_path': [file_path],
                            'status': 'unknown'})
         try:
@@ -186,7 +185,7 @@ def update_ml_metadata(file_paths, platform: str, cloud_bucket: str = None, mode
     out_df_list = []
 
     # add the data to the metadata
-    for file_path in tqdm(file_paths):
+    for file_path in file_paths:
         df = pd.DataFrame({'file_path': [file_path],
                            'status': 'unknown'})
         try:
