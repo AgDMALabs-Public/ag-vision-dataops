@@ -174,6 +174,8 @@ def _save_image_from_annotation_download(download_dir: str, save_dir: str):
         split_dir = download_dir + '/' + split
         if os.path.exists(split_dir):
             image_list = os.listdir(split_dir)
+            image_list = [x for x in image_list if '.json' not in x]
+
             for img_name in tqdm(image_list):
                 save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
                 if os.path.exists(save_path):
