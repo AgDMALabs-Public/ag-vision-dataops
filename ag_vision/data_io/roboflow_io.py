@@ -171,14 +171,16 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
 
 def _save_image_from_annotation_download(download_dir: str, save_dir: str):
     for split in SPLIT_LIST:
-        image_list = os.listdir(download_dir + '/' + split)
-        for img_name in tqdm(image_list):
-            save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
-            if os.path.exists(save_path):
-                print('The image already exists, skipping download.')
-                continue
-            else:
-                shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
+        split_dir = download_dir + '/' + split
+        if os.path.exists(split_dir):
+            image_list = os.listdir(split_dir)
+            for img_name in tqdm(image_list):
+                save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
+                if os.path.exists(save_path):
+                    print('The image already exists, skipping download.')
+                    continue
+                else:
+                    shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
 
 
 def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
@@ -208,40 +210,41 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                                                  save_dir=img_dir_name)
 
         for split in SPLIT_LIST:
-            dl = dataset.location + f'/{split}/_annotations.coco.json'
-            data = json.load(open(dl))
+            split_file = dataset.location + f'/{split}/_annotations.coco.json'
+            if os.path.exists(split_file):
+                data = json.load(open(split_file))
 
-            for x in range(len(data['images'])):
-                if save_images:
-                    anno_img_name = data['images'][x]['file_name'].replace('.rf.', '_rf_')
-                else:
-                    anno_img_name = data['images'][x]['extra']['name']
-
-                uid = os.path.splitext(anno_img_name)[0]
-
-                if anno_img_name in img_list:
-                    print(f"Saving {anno_img_name} from Roboflow ...")
-                    new_data = aio.extract_single_coco_json_annotations(data=data,
-                                                                        index=x,
-                                                                        split=split)
-
-                    anno_path = paths.annotation_path(project=project_path,
-                                                      annotation_type=annotation_type,
-                                                      task_name=task_name,
-                                                      batch_name=batch_name,
-                                                      download_date=download_date,
-                                                      f_name=uid + '.json')
-                    if platform == 'db':
-                        dbio.save_json_to_databricks(data=new_data,
-                                                     file_name=anno_path)
-                    elif platform == 'local':
-                        lio.save_json(data=new_data,
-                                      file_path=anno_path)
+                for x in range(len(data['images'])):
+                    if save_images:
+                        anno_img_name = data['images'][x]['file_name'].replace('.rf.', '_rf_')
                     else:
-                        raise ValueError(f"Platform {platform} is not supported.")
+                        anno_img_name = data['images'][x]['extra']['name']
 
-                else:
-                    print(f"{anno_img_name} Is not in this batch, skipping saving ...")
+                    uid = os.path.splitext(anno_img_name)[0]
+
+                    if anno_img_name in img_list:
+                        print(f"Saving {anno_img_name} from Roboflow ...")
+                        new_data = aio.extract_single_coco_json_annotations(data=data,
+                                                                            index=x,
+                                                                            split=split)
+
+                        anno_path = paths.annotation_path(project=project_path,
+                                                          annotation_type=annotation_type,
+                                                          task_name=task_name,
+                                                          batch_name=batch_name,
+                                                          download_date=download_date,
+                                                          f_name=uid + '.json')
+                        if platform == 'db':
+                            dbio.save_json_to_databricks(data=new_data,
+                                                         file_name=anno_path)
+                        elif platform == 'local':
+                            lio.save_json(data=new_data,
+                                          file_path=anno_path)
+                        else:
+                            raise ValueError(f"Platform {platform} is not supported.")
+
+                    else:
+                        print(f"{anno_img_name} Is not in this batch, skipping saving ...")
 
     elif annotation_type == 'classification':
         dataset = rf_project.version(dataset_version).download("folder",
