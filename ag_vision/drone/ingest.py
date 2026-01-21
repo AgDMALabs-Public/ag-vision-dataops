@@ -15,9 +15,9 @@ PLOT_INGEST_COLS = ['src_path', 'plot_id', 'camera']
 
 
 class DroneDataIngest(AgImageIngest):
-    def __init__(self, platform: str, cloud_bucket: str, flight_date: str, plot_ingest_df: pd.DataFrame or None = None,
+    def __init__(self, platform: str, cloud_bucket: str, cloud_client, flight_date: str, plot_ingest_df: pd.DataFrame or None = None,
                  plot_boundary_key: str = None, gcp_key: str = None, orthomosaic_key: str = None, dem_key: str = None,
-                 flight_metadata_key: str = None, flight_metadata: DroneFlight or None = None, cloud_client=None):
+                 flight_metadata_key: str = None, flight_metadata: DroneFlight or None = None):
         """
         Represents a drone imagery flight operation, encapsulating details such as
         specific date, relevant metadata, and associated data files required for
@@ -38,8 +38,7 @@ class DroneDataIngest(AgImageIngest):
             cloud_client: The cloud client instance used for uploading files.
         """
         # Call the initializer of the parent class 'Image' to handle the common attributes
-        super().__init__(platform, cloud_bucket)
-        self.cloud_client = cloud_client
+        super().__init__(platform, cloud_bucket, cloud_client)
         self.drone_mission_dir = None
         self.flight_date = pd.to_datetime(flight_date).strftime("%Y-%m-%d")
         self.flight_metadata = flight_metadata

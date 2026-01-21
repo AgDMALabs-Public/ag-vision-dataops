@@ -16,10 +16,10 @@ METADATA_COLS = ['image_type','sample_type', 'object_resolution', 'camera_make',
                  'weed_pressure', 'notes']
 
 class MobileImageIngest(AgImageIngest):
-    def __init__(self, platform: str = None, cloud_bucket: str = None, ingest_df: pd.DataFrame or None = None,
+    def __init__(self, platform: str = None, cloud_bucket: str = None, cloud_client = None, ingest_df: pd.DataFrame or None = None,
                  event_type: str = None):
         # Call the initializer of the parent class 'Image' to handle the common attributes
-        super().__init__(platform, cloud_bucket, ingest_df)
+        super().__init__(platform, cloud_bucket, ingest_df, cloud_client)
 
         self.event_type = event_type
 

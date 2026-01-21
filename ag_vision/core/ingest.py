@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 
 class AgImageIngest:
     def __init__(self, platform: str = None, cloud_bucket: str = None, ingest_df: pd.DataFrame or None = None,
-                 task: str = None):
+                 task: str = None, cloud_client=None):
         """
 
         """
         self.platform = platform
         self.cloud_bucket = cloud_bucket
+        self.cloud_client = cloud_client
         self.ingest_df = ingest_df
         self.task = task
         self.failed_upload = []
@@ -47,13 +48,14 @@ class AgImageIngest:
         else:
             logger.warning(f'The cloud platform need to be local or db')
 
-    def upload_local_data_to_db(self, db_client: WorkspaceClient, chunk_size: int = 1024 * 1024, generate_metadata: bool = True):
+    def upload_local_data_to_db(self, chunk_size: int = 1024 * 1024, generate_metadata: bool = True):
         """
 
         """
+
         for idx, row in tqdm(self.ingest_df.iterrows(), total=len(self.ingest_df)):
             try:
-                databricks_io.upload_file_with_progress(w=db_client,
+                databricks_io.upload_file_with_progress(w=self.cloud_client,
                                                         local_file_path=row['src_path'],
                                                         volume_path=row['dst_path'],
                                                         chunk_size = chunk_size)

@@ -32,6 +32,8 @@ dependencies = [
     "fastapi>=0.123.8",
     "python-dotenv>=0.9.9",
     "rasterio>=1.4.4",
+    "typing_extensions>=4.10.0",
+    "pydantic>=2.10.0",
 ]
 
 [tool.setuptools]
