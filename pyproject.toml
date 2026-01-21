@@ -27,7 +27,8 @@ dependencies = [
     "tqdm>=4.67.1",
     "open-aglabs @ git+https://github.com/AgDMALabs-Public/AgDMALabs-open.git",
     "numpy>=1.5.0",
-    "torchvision>=0.24.1",
+    "torch==2.9.1",           # Add this explicitly, limit spark errors
+    "torchvision==0.24.1",    # Pin this to match torch 2.5
     "huggingface-hub>=1.1.5",
     "fastapi>=0.123.8",
     "python-dotenv>=0.9.9",
