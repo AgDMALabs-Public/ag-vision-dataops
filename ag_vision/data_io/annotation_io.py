@@ -90,17 +90,41 @@ def add_annotations_to_batch(annotations_df, project_path: str, annotation_type:
             print(f"Error processing image {row['image_path']}: {e}")
 
 
-def extract_single_coco_json_annotations(data: dict, index: int, split: str) -> dict:
-    assert data['images'][index]['id'] == data['annotations'][index]['image_id']
+def extract_single_coco_json_annotations(data: dict, index: int, split: str, image_name: str) -> dict:
+    """
+    Extract annotations and metadata for a single image from COCO dataset.
+
+    This function extracts the annotations and relevant metadata for a single image
+    from a COCO formatted JSON dataset, based on the provided index. It also allows
+    updating the image's file name and specifying a dataset split for better
+    organization.
+
+    Args:
+        data (dict): The COCO dataset formatted as a dictionary. It contains
+            'info', 'licenses', 'categories', 'images' and 'annotations' keys.
+        index (int): Index of the image in the dataset's 'images' list to retrieve
+            annotations for.
+        split (str): A string specifying the dataset's split (e.g., 'train',
+            'val', 'test') which will be added to the 'info' section of the
+            returned dictionary.
+        image_name (str): A string that specifies the new file name to assign
+            to the target image in the returned data.
+
+    Returns:
+        dict: A dictionary containing the extracted annotations, image metadata,
+        and updated information for the single image.
+    """
+    # Get all the annotations that belong to that image
+    annotations = [x for x in data['annotations'] if x['image_id'] == data['images'][index]['id']]
 
     new_data = {'info': data['info'],
                 'licenses': data['licenses'],
                 'categories': data['categories'],
                 'images': [data['images'][index]],
-                'annotations': [data['annotations'][index]]}
+                'annotations': annotations}
 
     new_data['info']['split'] = split
-    new_data['images'][0]['file_name'] = new_data['images'][0]['extra']['name']
+    new_data['images'][0]['file_name'] = image_name
 
     return new_data
 
