@@ -228,7 +228,8 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                         print(f"Saving {anno_img_name} from Roboflow ...")
                         new_data = aio.extract_single_coco_json_annotations(data=data,
                                                                             index=x,
-                                                                            split=split)
+                                                                            split=split,
+                                                                            image_name=anno_img_name)
 
                         anno_path = paths.annotation_path(project=project_path,
                                                           annotation_type=annotation_type,
