@@ -222,15 +222,16 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
     if not os.path.exists(img_dir_name):
         os.makedirs(img_dir_name, exist_ok=True)
 
-    img_list = os.listdir(img_dir_name)
-    img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
-
     if annotation_type in ['object_detection', 'instance_segmentation', 'semantic_segmentation']:
         dataset = rf_project.version(dataset_version).download("coco")
 
         if save_images:
             _save_image_from_annotation_download(download_dir=dataset.location,
                                                  save_dir=img_dir_name)
+
+        # get a list of the images in the dir
+        img_list = os.listdir(img_dir_name)
+        img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
 
         for split in SPLIT_LIST:
             split_file = dataset.location + f'/{split}/_annotations.coco.json'
@@ -278,6 +279,10 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
             _save_image_from_classifiction_download(download_dir=dataset.location,
                                                     save_dir=img_dir_name)
 
+        # get a list of the images in the dir
+        img_list = os.listdir(img_dir_name)
+        img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
+
         class_df = anno.generate_classification_df(folder_location=dataset.location,
                                                    img_list=img_list,
                                                    downloaded_images=save_images)
@@ -298,5 +303,4 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
             raise ValueError(f"Platform {platform} is not supported.")
 
     else:
-        raise ValueError(f"Annotation type {annotation_type} is not supported.")
         raise ValueError(f"Annotation type {annotation_type} is not supported.")
