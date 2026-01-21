@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-def generate_classification_df(folder_location: str, img_list: list):
+def generate_classification_df(folder_location: str, img_list: list, downloaded_images: bool=False):
     df_list = []
     for split in ['train', 'test', 'valid']:
         a = os.listdir(f"{folder_location}/{split}/")
@@ -10,7 +10,11 @@ def generate_classification_df(folder_location: str, img_list: list):
             df = pd.DataFrame({'rf_file_name': rf_files})
             df.loc[:, 'class'] = label
             df.loc[:, 'split'] = split
-            df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.split('_')[0])
+            if downloaded_images:
+                df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.replace('.rf.', '_rf_'))
+            else:
+                df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.split('_')[0])
+
             df_list.append(df)
 
     id_list = [os.path.splitext(x)[0] for x in img_list]
