@@ -185,6 +185,27 @@ def _save_image_from_annotation_download(download_dir: str, save_dir: str):
                     shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
 
 
+def _save_image_from_classifiction_download(download_dir: str, save_dir: str):
+    for split in SPLIT_LIST:
+        split_dir = download_dir + '/' + split
+        if os.path.exists(split_dir):
+            classes = os.listdir(split_dir)
+
+            for cls in classes:
+                class_dir = split_dir + '/' + cls
+
+                image_list = os.listdir(class_dir)
+                image_list = [x for x in image_list if '.json' not in x]
+
+                for img_name in tqdm(image_list):
+                    save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
+                    if os.path.exists(save_path):
+                        print('The image already exists, skipping download.')
+                        continue
+                    else:
+                        shutil.copy(download_dir + '/' + split + '/' + cls + '/' + img_name, save_path)
+
+
 def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
                                             task_name: str, batch_name: str, download_date: str, platform: str,
                                             save_images: bool = False):
@@ -254,8 +275,8 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                                                                location="/tmp/roboflow_data")
 
         if save_images:
-            _save_image_from_annotation_download(download_dir=dataset.location,
-                                                 save_dir=img_dir_name)
+            _save_image_from_classifiction_download(download_dir=dataset.location,
+                                                    save_dir=img_dir_name)
 
         class_df = anno.generate_classification_df(folder_location=dataset.location,
                                                    img_list=img_list,
@@ -277,4 +298,5 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
             raise ValueError(f"Platform {platform} is not supported.")
 
     else:
+        raise ValueError(f"Annotation type {annotation_type} is not supported.")
         raise ValueError(f"Annotation type {annotation_type} is not supported.")
