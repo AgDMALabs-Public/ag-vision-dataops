@@ -194,6 +194,8 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                                             f_name='none.jpg')
 
     img_dir_name = os.path.dirname(imgs_path)
+    if not os.path.exists(img_dir_name):
+        os.makedirs(img_dir_name, exist_ok=True)
 
     img_list = os.listdir(img_dir_name)
     img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
