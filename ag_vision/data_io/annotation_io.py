@@ -13,25 +13,6 @@ from open_aglabs.core import constants as cst
 logger = logging.getLogger(__name__)
 
 
-def save_annotated_image_and_metadata_to_s3(image: np.ndarray, metadata: dict, project_path: str, annotation_type: str,
-                                            task_name: str, batch_name: str, image_name: str, bucket_name):
-    img_path = paths.annotation_image_path(project=project_path,
-                                           annotation_type=annotation_type,
-                                           task_name=task_name,
-                                           batch_name=batch_name,
-                                           f_name=image_name)
-
-    metadata_path = paths.generate_metadata_path_from_file_name(img_path)
-
-    aws_io.save_image_to_s3(image=image,
-                            bucket_name=bucket_name,
-                            key=img_path)
-
-    aws_io.save_json_to_s3(json_data=json.dumps(metadata, indent=4),
-                           bucket_name=bucket_name,
-                           key=metadata_path)
-
-
 def create_annotation_batch(img_list: list, project_path: str, annotation_type: str, task_name: str, batch_name: str,
                             env: str = 'db'):
     assert env in ['db']
@@ -65,7 +46,7 @@ def create_annotation_batch(img_list: list, project_path: str, annotation_type: 
 
 
 def add_annotations_to_batch(annotations_df, project_path: str, annotation_type: str, task_name: str, batch_name: str,
-                            date: str, env: str = 'db'):
+                             date: str, env: str = 'db'):
     assert env in ['db']
     assert annotation_type in cst.ANNOTATION_TYPE_LIST, f"{annotation_type} is not a valid annotation type. Valid types are {cst.ANNOTATION_TYPE_LIST}"
 

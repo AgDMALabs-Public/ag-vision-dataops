@@ -14,6 +14,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+SPLIT_LIST = ['train', 'valid', 'test']
+IMG_EXTENSIONS = ['.jpg', '.jpeg', '.tiff', '.png', '.webp']
+
 
 def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotation_path: str = None,
                              split: str = 'train', tmp_copy: bool = True):
@@ -42,7 +45,7 @@ def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotat
 
 def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                         batch_name: str, download_date: str, split: str, tmp_copy: bool = True,
-                                        img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png', '.webp'],
+                                        img_extension: list = IMG_EXTENSIONS,
                                         annotation: bool = True):
     """
     Uploads a batch of images and their annotations to Roboflow. The function processes
@@ -129,11 +132,11 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
             try:
                 print(f"Uploading {img} and annotation to Roboflow")
                 upload_image_to_roboflow(rf_project=rf_project,
-                                     batch_name=batch_name,
-                                     img_path=img_dir + '/' + img,
-                                     annotation_path=merged_file,
-                                     split=split,
-                                     tmp_copy=tmp_copy)
+                                         batch_name=batch_name,
+                                         img_path=img_dir + '/' + img,
+                                         annotation_path=merged_file,
+                                         split=split,
+                                         tmp_copy=tmp_copy)
             except Exception as e:
                 print(f"Error uploading {img}: {e}")
 
@@ -153,7 +156,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
 def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                    batch_name: str, split: str, tmp_copy: bool = True,
-                                   img_extension: list = ['.jpg', '.jpeg', '.tiff', '.png', '.webp']):
+                                   img_extension: list = IMG_EXTENSIONS):
     upload_annotation_batch_to_roboflow(rf_project=rf_project,
                                         annotation_type=annotation_type,
                                         project_path=project_path,
@@ -166,9 +169,21 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
                                         annotation=False)
 
 
-def download_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
-                                 task_name: str, batch_name: str, download_date: str, platform: str,
-                                 save_images: bool = False):
+def _save_image_from_annotation_download(download_dir: str, save_dir: str):
+    for split in SPLIT_LIST:
+        image_list = os.listdir(download_dir + '/' + split)
+        for img_name in tqdm(image_list):
+            save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
+            if os.path.exists(save_path):
+                print('The image already exists, skipping download.')
+                continue
+            else:
+                shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
+
+
+def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
+                                            task_name: str, batch_name: str, download_date: str, platform: str,
+                                            save_images: bool = False):
     assert platform in ['db', 'local'], f"Platform {platform} is not supported. needs to be db or local"
 
     # get a list of images that in the batch
@@ -181,20 +196,28 @@ def download_batch_from_roboflow(rf_project, dataset_version: int, project_path:
     img_dir_name = os.path.dirname(imgs_path)
 
     img_list = os.listdir(img_dir_name)
-    img_list = [x for x in img_list if os.path.splitext(x)[1] in ['.jpg', '.jpeg', '.tiff', '.png']]
+    img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
 
     if annotation_type in ['object_detection', 'instance_segmentation', 'semantic_segmentation']:
         dataset = rf_project.version(dataset_version).download("coco")
 
-        for split in ['train', 'valid', 'test']:
+        if save_images:
+            _save_image_from_annotation_download(download_dir=dataset.location,
+                                                 save_dir=img_dir_name)
+
+        for split in SPLIT_LIST:
             dl = dataset.location + f'/{split}/_annotations.coco.json'
             data = json.load(open(dl))
 
             for x in range(len(data['images'])):
-                anno_img_name = data['images'][x]['extra']['name']
+                if save_images:
+                    anno_img_name = data['images'][x]['file_name'].replace('.rf.', '_rf_')
+                else:
+                    anno_img_name = data['images'][x]['extra']['name']
+
                 uid = os.path.splitext(anno_img_name)[0]
 
-                if anno_img_name in tqdm(img_list):
+                if anno_img_name in img_list:
                     print(f"Saving {anno_img_name} from Roboflow ...")
                     new_data = aio.extract_single_coco_json_annotations(data=data,
                                                                         index=x,
@@ -222,8 +245,13 @@ def download_batch_from_roboflow(rf_project, dataset_version: int, project_path:
         dataset = rf_project.version(dataset_version).download("folder",
                                                                location="/tmp/roboflow_data")
 
+        if save_images:
+            _save_image_from_annotation_download(download_dir=dataset.location,
+                                                 save_dir=img_dir_name)
+
         class_df = anno.generate_classification_df(folder_location=dataset.location,
-                                                   img_list=img_list)
+                                                   img_list=img_list,
+                                                   downloaded_images=save_images)
 
         anno_path = paths.annotation_path(project=project_path,
                                           annotation_type=annotation_type,
