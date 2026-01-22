@@ -282,10 +282,13 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
         # get a list of the images in the dir
         img_list = os.listdir(img_dir_name)
         img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
+        print(f"Number of images in the batch: {len(img_list)}")
 
         class_df = anno.generate_classification_df(folder_location=dataset.location,
                                                    img_list=img_list,
                                                    downloaded_images=save_images)
+
+        print(f"Number of annotations in the batch: {len(class_df)}")
 
         anno_path = paths.annotation_path(project=project_path,
                                           annotation_type=annotation_type,
