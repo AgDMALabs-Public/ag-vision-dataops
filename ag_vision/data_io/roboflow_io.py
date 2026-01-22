@@ -2,15 +2,14 @@ import os
 import shutil
 import json
 
-from sympy.codegen import Print
 from tqdm import tqdm
-import pandas as pd
 from ag_vision.constants import paths
 from ag_vision.data_io import annotation_io as aio
 from ag_vision.data_io import databricks_io as dbio
 from ag_vision.data_io import local_io as lio
 from ag_vision.annotation import annotation as anno
 import logging
+import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +20,12 @@ IMG_EXTENSIONS = ['.jpg', '.jpeg', '.tiff', '.png', '.webp']
 def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotation_path: str = None,
                              split: str = 'train', tmp_copy: bool = True):
     if tmp_copy:
-        tmp_img_path = f"/tmp/images/{os.path.basename(img_path)}"
+        tmp_img_path = f"{tempfile.mktemp()}/images/{os.path.basename(img_path)}"
         os.makedirs(os.path.dirname(tmp_img_path), exist_ok=True)
         shutil.copy(img_path, tmp_img_path)
 
         if annotation_path is not None:
-            tmp_annotation_path = f"/tmp/annotations/{os.path.basename(annotation_path)}"
+            tmp_annotation_path = f"{tempfile.mktemp()}/annotations/{os.path.basename(annotation_path)}"
             os.makedirs(os.path.dirname(tmp_annotation_path), exist_ok=True)
             shutil.copy(annotation_path, tmp_annotation_path)
         else:
@@ -105,7 +104,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
 
     annotation_data_list = []
     if annotation:
-        Print("Generating Merged Annotation File...")
+        print("Generating Merged Annotation File...")
         for img in tqdm(imgs):
             # Assumes that the annotation is the same name but ends in .json
             a_file = annotation_dir + '/' + os.path.splitext(img)[0] + '.json'
@@ -273,7 +272,7 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
 
     elif annotation_type == 'classification':
         dataset = rf_project.version(dataset_version).download("folder",
-                                                               location="/tmp/roboflow_data")
+                                                               location=f"{tempfile.mktemp()}/roboflow_data")
 
         if save_images:
             _save_image_from_classifiction_download(download_dir=dataset.location,
