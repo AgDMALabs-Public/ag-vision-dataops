@@ -6,13 +6,15 @@ def generate_classification_df(folder_location: str, img_list: list, downloaded_
     for split in ['train', 'test', 'valid']:
         a = os.listdir(f"{folder_location}/{split}")
         for label in a:
-            rf_files =  os.listdir(f"{folder_location}/{split}/{label}/")
+            rf_files =  os.listdir(f"{folder_location}/{split}/{label}")
             df = pd.DataFrame({'rf_file_name': rf_files})
             df.loc[:, 'class'] = label
             df.loc[:, 'split'] = split
             if downloaded_images:
-                df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.replace('.rf.', '_rf_'))
+                df.loc[:, 'rf_file_name'] = df['rf_file_name'].apply(lambda x: x.replace('.rf.', '_rf_'))
+                df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: os.path.splitext(x)[0])
             else:
+                # if we pushed the images up the first part of the roboflow id is the original name.
                 df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.split('_')[0])
 
             df_list.append(df)
