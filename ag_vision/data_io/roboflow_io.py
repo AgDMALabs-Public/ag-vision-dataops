@@ -296,6 +296,8 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                                           download_date=download_date,
                                           f_name='classification_labels.csv')
 
+        print(f"Saving classification labels to {anno_path}")
+
         if platform == 'db':
             dbio.save_csv_to_databricks(data=class_df,
                                         file_name=anno_path)
