@@ -184,7 +184,7 @@ def _save_image_from_annotation_download(download_dir: str, save_dir: str):
                     shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
 
 
-def _save_image_from_classifiction_download(download_dir: str, save_dir: str):
+def _save_image_from_classification_download(download_dir: str, save_dir: str):
     for split in SPLIT_LIST:
         split_dir = download_dir + '/' + split
         if os.path.exists(split_dir):
@@ -275,8 +275,8 @@ def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, pr
                                                                location=f"{tempfile.mktemp()}/roboflow_data")
 
         if save_images:
-            _save_image_from_classifiction_download(download_dir=dataset.location,
-                                                    save_dir=img_dir_name)
+            _save_image_from_classification_download(download_dir=dataset.location,
+                                                     save_dir=img_dir_name)
 
         # get a list of the images in the dir
         img_list = os.listdir(img_dir_name)
