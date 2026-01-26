@@ -1,10 +1,8 @@
 import mlflow.pyfunc
 from inference import get_model
 import supervision as sv
-import cv2
 import mlflow
 import json
-from pathlib import Path
 from datetime import date
 
 def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):

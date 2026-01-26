@@ -30,7 +30,7 @@ def convert_opencv_to_pil(opencv_image):
 
 
 class BlurInference:
-    def __init__(self, device=None, cache_dir=None, local_dir=None):
+    def __init__(self, device=None, cache_dir=None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -57,8 +57,7 @@ class BlurInference:
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         cache_dir=cache_dir,
-                                         local_dir=local_dir)
+                                         cache_dir=cache_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 
@@ -108,7 +107,7 @@ class BlurInference:
 
 
 class AgImageType:
-    def __init__(self, device=None, cache_dir=None, local_dir=None):
+    def __init__(self, device=None, cache_dir=None):
         """
         Initializes the model, transforms, and other static objects for blur inference.
         This is the expensive setup that should only be run once.
@@ -136,8 +135,7 @@ class AgImageType:
             # This function handles download, caching, and returns the local path
             model_path = hf_hub_download(repo_id=HF_MODEL_REPO_ID,
                                          filename=HF_WEIGHTS_FILENAME,
-                                         cache_dir=cache_dir,
-                                         local_dir=local_dir)
+                                         cache_dir=cache_dir)
 
             print(f"Loaded weights from local cache: {model_path}")
 

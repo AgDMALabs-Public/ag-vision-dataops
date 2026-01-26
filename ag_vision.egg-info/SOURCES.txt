@@ -22,6 +22,7 @@ ag_vision/data_io/annotation_io.py
 ag_vision/data_io/aws_io.py
 ag_vision/data_io/databricks_io.py
 ag_vision/data_io/local_io.py
+ag_vision/data_io/mlflow_io.py
 ag_vision/data_io/roboflow_io.py
 ag_vision/data_io/schemas.py
 ag_vision/data_io/temp.py
