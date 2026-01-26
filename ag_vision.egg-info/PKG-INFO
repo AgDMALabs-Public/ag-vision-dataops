@@ -31,7 +31,7 @@ Requires-Dist: typing_extensions>=4.10.0
 Requires-Dist: pydantic>=2.10.0
 Requires-Dist: supervision>=0.27.0
 Requires-Dist: mlflow>=2.10.0
-Requires-Dist: inference>=0.20.0
+Requires-Dist: inference
 Dynamic: license-file
 
 # ag_vision
