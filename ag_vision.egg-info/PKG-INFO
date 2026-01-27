@@ -1,8 +1,8 @@
 Metadata-Version: 2.4
 Name: ag-vision
-Version: 1.1.0
+Version: 1.1.1
 Summary: Add your description here
-Requires-Python: >=3.11
+Requires-Python: <3.13,>=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: boto3
@@ -31,7 +31,6 @@ Requires-Dist: typing_extensions>=4.10.0
 Requires-Dist: pydantic>=2.10.0
 Requires-Dist: supervision>=0.27.0
 Requires-Dist: mlflow>=2.10.0
-Requires-Dist: inference
 Dynamic: license-file
 
 # ag_vision

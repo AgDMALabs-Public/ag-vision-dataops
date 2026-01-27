@@ -22,7 +22,7 @@ def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):
                 "category_id": category_map[pred_json["class_name"]],
                 "iscrowd": 0
             })
-        
+
         elif model_type == "object_detection" or model_type == "instance_segmentation":
             x_min = pred_json.get("x") - pred_json.get("width") / 2
             y_min = pred_json.get("y") - pred_json.get("height") / 2
@@ -41,8 +41,6 @@ def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):
 
     return annotations
 
-def load_roboflow_model(parameters, api_key):
-    return get_model(model_id=parameters["model_id"], api_key=api_key) # downloads weights vs. run_inference call that runs on Roboflow
 
 def annotate_image_with_inference_result(image, inference_result, parameters):
     model_type = parameters["model_type"]
@@ -59,7 +57,7 @@ def annotate_image_with_inference_result(image, inference_result, parameters):
                 scene=image, detections=detections)
             annotated_image = label_annotator.annotate(
                 scene=annotated_image, detections=detections)
-        
+
         elif (model_type == "instance_segmentation"):
             mask_annotator = sv.MaskAnnotator()
             labels = [item["class_name"] for item in inference_result_json.get("predictions")]
@@ -68,11 +66,12 @@ def annotate_image_with_inference_result(image, inference_result, parameters):
                 scene=image, detections=detections)
             annotated_image = label_annotator.annotate(
                 scene=annotated_image, detections=detections, labels=labels)
-        
+
         return annotated_image
-    
+
     else:
         return
+
 
 def format_output(parameters, category_map, images, image_annotations_json, annotated_images):
     results = []
@@ -100,8 +99,9 @@ def format_output(parameters, category_map, images, image_annotations_json, anno
         "coco_json_output": json.dumps(coco_output),
         "annotated_images": annotated_images
     })
-        
+
     return results
+
 
 def ml_flow_log_run(model, input_example):
     roboflow_pyfunc_model = model
