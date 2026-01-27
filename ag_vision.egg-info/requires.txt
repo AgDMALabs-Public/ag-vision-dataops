@@ -24,4 +24,3 @@ typing_extensions>=4.10.0
 pydantic>=2.10.0
 supervision>=0.27.0
 mlflow>=2.10.0
-inference
