@@ -1,11 +1,8 @@
 import mlflow.pyfunc
-from inference import get_model
 import supervision as sv
 import mlflow
 import json
 from datetime import date
-from PIL import Image
-import numpy as np
 import cv2
 
 
