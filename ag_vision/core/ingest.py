@@ -53,25 +53,25 @@ class AgImageIngest:
 
         """
 
-        for idx, row in tqdm(self.ingest_df.iterrows(), total=len(self.ingest_df)):
+        for idx, row in self.ingest_df.iterrows():
             try:
+                print(f'Uploading to {row["dst_path"]}')
                 databricks_io.upload_file_with_progress(w=self.cloud_client,
                                                         local_file_path=row['src_path'],
                                                         volume_path=row['dst_path'],
                                                         chunk_size = chunk_size)
 
                 if generate_metadata:
+                    print(f'Uploading to metadata')
                     ag_img = AgImage(img_key=row['dst_path'],
-                                     platform=self.platform)
+                                     platform='db')
                     ag_img.generate_metadata_key_from_img_key()
                     ag_img.initialize_metadata(device=row['device'],
                                                img_type=row['img_type'])
-                    ag_img.add_image_id_to_metadata()
                     ag_img.metadata.path = row['dst_path']
-                    ag_img.metadata.protocol_properties.protocol_name = row['protocol_name']
-                    ag_img.metadata.protocol_properties.protocol_version = row['protocol_version']
+                    ag_img.metadata.protocol_properties.name = row['protocol']
 
-                    ag_img.upload_metadata_to_cloud()
+                    ag_img.upload_metadata_to_cloud(db_workspace_client=self.cloud_client)
 
             except Exception as e:
                 self.failed_upload.append(row['src_path'])

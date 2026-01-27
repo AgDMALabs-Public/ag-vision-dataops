@@ -12,7 +12,7 @@ INGEST_COLS = ['src_path', 'project_dir', 'site', 'trial', 'year', 'country', 'c
                'field', 'location', 'task', 'protocol', 'collection_date', 'id', 'plot_id', 'img_ext', 'event_type']
 
 METADATA_COLS = ['image_type','sample_type', 'object_resolution', 'camera_make', 'camera_angle', 'camera_height_m',
-                 'device', 'protocol_name', 'image_type', 'crop_type', 'growth_stage', 'soil_color', 'tillage_type',
+                 'device', 'protocol', 'image_type', 'crop_type', 'growth_stage', 'soil_color', 'tillage_type',
                  'weed_pressure', 'notes']
 
 class MobileImageIngest(AgImageIngest):
