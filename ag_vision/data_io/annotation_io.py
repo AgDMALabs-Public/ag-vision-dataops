@@ -28,8 +28,8 @@ def create_annotation_batch(img_list: list, project_path: str, annotation_type: 
 
             img_metadata_path = paths.generate_metadata_path_from_file_name(data_path=new_img_path)
 
-            metadata = {'parent_img_path': img_name,
-                        'parent_img_id': new_img_id}
+            metadata = {'parent_file_path': img_name,
+                        'id': new_img_id}
 
             if env == 'db':
                 os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
