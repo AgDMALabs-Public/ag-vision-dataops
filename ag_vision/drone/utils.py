@@ -4,31 +4,6 @@ import rasterio
 from rasterio.features import geometry_mask
 from shapely.geometry import mapping
 
-def crop_image_by_mask(image, mask, channel_first=True):
-    rows = np.any(mask, axis=1)
-    cols = np.any(mask, axis=0)
-
-    # Get the min/max row/column indices
-    min_row, max_row = np.where(rows)[0][[0, -1]]
-    min_col, max_col = np.where(cols)[0][[0, -1]]
-
-    # Add 1 to max_row and max_col to make slicing inclusive
-    max_row += 1
-    max_col += 1
-
-    # Crop the image based on the bounding box
-    if image.ndim == 2: # (H, W)
-        cropped_image = image[min_row:max_row, min_col:max_col]
-    elif image.ndim == 3:
-        if channel_first: # (C, H, W)
-            cropped_image = image[:, min_row:max_row, min_col:max_col]
-        else: # (H, W, C)
-            cropped_image = image[min_row:max_row, min_col:max_col, :]
-    else:
-        cropped_image = image
-
-    return cropped_image
-
 
 def generate_mask_from_polygon(polygon, img_transform, img_x, img_y):
     mask = geometry_mask([mapping(polygon)],
@@ -99,6 +74,37 @@ def apply_mask_to_image(image, mask, fill_value=0):
             masked_image[~expanded_mask] = fill_value
 
     return masked_image
+
+
+def crop_image_by_mask(image, mask, channel_first=True):
+    rows = np.any(mask, axis=1)
+    cols = np.any(mask, axis=0)
+
+    # Handle case where mask is empty
+    if not np.any(rows) or not np.any(cols):
+        return None
+
+    # Get the min/max row/column indices
+    min_row, max_row = np.where(rows)[0][[0, -1]]
+    min_col, max_col = np.where(cols)[0][[0, -1]]
+
+    # Add 1 to max_row and max_col to make slicing inclusive
+    max_row += 1
+    max_col += 1
+
+    # Crop the image based on the bounding box
+    if image.ndim == 2:  # (H, W)
+        cropped_image = image[min_row:max_row, min_col:max_col]
+    elif image.ndim == 3:
+        if channel_first:  # (C, H, W)
+            cropped_image = image[:, min_row:max_row, min_col:max_col]
+        else:  # (H, W, C)
+            cropped_image = image[min_row:max_row, min_col:max_col, :]
+    else:
+        cropped_image = image
+
+    return cropped_image
+
 
 def read_geotiff(file_name):
     """

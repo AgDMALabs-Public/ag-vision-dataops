@@ -228,6 +228,61 @@ def annotation_path(project: str, annotation_type: str, task_name: str, batch_na
     return f"{project}/annotations/{annotation_type}/{task_name}/{batch_name}/{download_date}/{f_name}"
 
 
+# ----------------------------------------------Inference Results------------------------------------------------------#
+def inference_image_path(project: str, inference_type: str, batch_name: str, task_name: str, f_name: str) -> str:
+    """
+    Generates the file path for an annotation image based on the specified parameters.
+
+    Parameters:
+    annotation_type (str): The type of annotation. Must be a valid type present in ANNOTATION_TYPE_LIST.
+    task_name (str): The name of the associated task.
+    batch_name (str): The name of the batch associated with the annotation.
+    f_name (str): The file name of the image.
+
+    Returns:
+    str: A string representing the generated file path for the annotation image.
+
+    Raises:
+    AssertionError: If the provided annotation_type is not in ANNOTATION_TYPE_LIST.
+    """
+    inference_type = inference_type.lower()
+    assert inference_type.lower() in ANNOTATION_TYPE_LIST, f"Invalid inference type: '{inference_type}'. Available options are: {ANNOTATION_TYPE_LIST}"
+
+    batch_name = batch_name.lower()
+    task_name = task_name.lower()
+    f_name = f_name.lower()
+
+    return f"{project}/inference_results/{inference_type}/{batch_name}/{task_name}/images/{f_name}"
+
+
+def inference_results_path(project: str, inference_type: str, batch_name: str, task_name: str, inference_date: str,
+                           f_name: str) -> str:
+    """
+    Generates a file path for annotations based on the provided parameters.
+
+    Args:
+        annotation_type (str): The type of annotation (e.g., 'object_detection', 'instance_segmentation', 'classification).
+        task_name (str): The name of the task associated with the annotation.
+        batch_name (str): The name of the batch for the task.
+        inference_date (str): The date when the inference was ran. Formatted using _format_date_string.
+        f_name (str): The name of the file.
+
+    Returns:
+        str: A formatted string representing the path for the annotation in the form:
+             "{project}/annotations/{annotation_type}/{task_name}/{batch_name}/{download_date}/{f_name}"
+    """
+    inference_type = inference_type.lower()
+    assert inference_type.lower() in ANNOTATION_TYPE_LIST, f"Invalid annotation type: '{inference_type}'. Available options are: {ANNOTATION_TYPE_LIST}"
+
+    task_name = task_name.lower()
+    batch_name = batch_name.lower()
+    f_name = f_name.lower()
+
+    inference_date = _format_date_string(inference_date)
+
+    return f"{project}/annotations/{inference_type}/{task_name}/{batch_name}/{inference_date}/{f_name}"
+
+
 # ----------------------------------------------Synthetic Data---------------------------------------------------------#
 def synthetic_image_path(project: str, annotation_type: str, task_name: str, batch_name: str, f_name: str) -> str:
     """
