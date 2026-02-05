@@ -8,7 +8,6 @@ from ag_vision.core import img_qc as iq
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 def process_single_image(image_id, file_path, platform: str):
     metadata_file = pth.generate_metadata_path_from_file_name(file_path)
 

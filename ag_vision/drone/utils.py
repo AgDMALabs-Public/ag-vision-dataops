@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 import rasterio
 from rasterio.features import geometry_mask
 from shapely.geometry import mapping
@@ -128,3 +128,55 @@ def read_geotiff(file_name):
         tif_crs = s.crs
 
     return img, transform, nodata, tif_crs
+
+
+def square_up_image(img):
+    # We look for any pixel where at least one channel is > 0
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+    # 3. Get the coordinates of all non-black pixels
+    coords = np.column_stack(np.where(thresh > 0))
+
+    # 4. Find the minimum area rectangle
+    # center (x,y), size (w,h), angle
+    rect = cv2.minAreaRect(coords)
+    angle = rect[-1]
+    print(angle)
+
+    # 5. Correct the angle
+    # OpenCV's angle logic can be quirky depending on version
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = 90-angle
+    print(angle)
+    # 6. Perform the rotation
+    (h, w) = img.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC)
+
+    return rotated
+
+
+def crop_black_borders(img):
+    """
+    Removes black borders from a straightened image.
+    """
+    # 1. Convert to grayscale to find non-zero pixels easily
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # 2. Find all pixel coordinates where the value is greater than 0
+    # (Using a small threshold like 10 can help if there's noise in the 'black')
+    pts = np.argwhere(gray > 0)
+
+    # 3. Find the min and max coordinates (top-left and bottom-right)
+    y_min, x_min = pts.min(axis=0)
+    y_max, x_max = pts.max(axis=0)
+
+    # 4. Crop the original image using these coordinates
+    # We add +1 to the max coordinates because slicing is exclusive
+    cropped = img[y_min:y_max + 1, x_min:x_max + 1]
+
+    return cropped
