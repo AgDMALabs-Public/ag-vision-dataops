@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 import rasterio
 from rasterio.features import geometry_mask
 from shapely.geometry import mapping
@@ -128,3 +128,33 @@ def read_geotiff(file_name):
         tif_crs = s.crs
 
     return img, transform, nodata, tif_crs
+
+
+def square_up_image(img):
+    # We look for any pixel where at least one channel is > 0
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+
+    # 3. Get the coordinates of all non-black pixels
+    coords = np.column_stack(np.where(thresh > 0))
+
+    # 4. Find the minimum area rectangle
+    # center (x,y), size (w,h), angle
+    rect = cv2.minAreaRect(coords)
+    angle = rect[-1]
+    print(angle)
+
+    # 5. Correct the angle
+    # OpenCV's angle logic can be quirky depending on version
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = 90-angle
+    print(angle)
+    # 6. Perform the rotation
+    (h, w) = img.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC)
+
+    return rotated

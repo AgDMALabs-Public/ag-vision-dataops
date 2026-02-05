@@ -8,7 +8,7 @@ from open_aglabs.core import constants as cst
 
 
 def create_inference_batch(img_list: list, project_path: str, inference_type: str, task_name: str, batch_name: str,
-                           env: str = 'db'):
+                           env: str = 'db') -> str:
     assert env in ['db']
     assert inference_type in cst.ANNOTATION_TYPE_LIST, f"{inference_type} is not a valid inference type. Valid types are {cst.ANNOTATION_TYPE_LIST}"
 
@@ -37,6 +37,8 @@ def create_inference_batch(img_list: list, project_path: str, inference_type: st
                                              file_name=img_metadata_path)
         except Exception as e:
             print(f"Error processing image {img_name}: {e}")
+
+    return os.path.dirname(new_img_path)
 
 
 def save_inference_result(result: dict, project_path: str, inference_type: str, task_name: str, batch_name: str,
