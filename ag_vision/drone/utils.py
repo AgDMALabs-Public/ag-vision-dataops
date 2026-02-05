@@ -158,3 +158,25 @@ def square_up_image(img):
     rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC)
 
     return rotated
+
+
+def crop_black_borders(img):
+    """
+    Removes black borders from a straightened image.
+    """
+    # 1. Convert to grayscale to find non-zero pixels easily
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # 2. Find all pixel coordinates where the value is greater than 0
+    # (Using a small threshold like 10 can help if there's noise in the 'black')
+    pts = np.argwhere(gray > 0)
+
+    # 3. Find the min and max coordinates (top-left and bottom-right)
+    y_min, x_min = pts.min(axis=0)
+    y_max, x_max = pts.max(axis=0)
+
+    # 4. Crop the original image using these coordinates
+    # We add +1 to the max coordinates because slicing is exclusive
+    cropped = img[y_min:y_max + 1, x_min:x_max + 1]
+
+    return cropped
