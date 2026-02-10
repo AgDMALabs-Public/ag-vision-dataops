@@ -4,6 +4,7 @@ import mlflow
 import json
 from datetime import date
 import cv2
+import os
 
 
 def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):
@@ -39,40 +40,7 @@ def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):
     return annotations
 
 
-def annotate_image_with_inference_result(image, inference_result, parameters):
-    model_type = parameters["model_type"]
-    inference_result_json = json.loads(inference_result.json())
-
-    if (model_type != "object_classification"):
-        detections = sv.Detections.from_inference(inference_result)
-        label_annotator = sv.LabelAnnotator()
-
-        if (model_type == "object_detection"):
-            bounding_box_annotator = sv.BoxAnnotator()
-
-            annotated_image = bounding_box_annotator.annotate(
-                scene=image, detections=detections)
-            annotated_image = label_annotator.annotate(
-                scene=annotated_image, detections=detections)
-
-        elif (model_type == "instance_segmentation"):
-            mask_annotator = sv.MaskAnnotator()
-            labels = [item["class_name"] for item in inference_result_json.get("predictions")]
-
-            annotated_image = mask_annotator.annotate(
-                scene=image, detections=detections)
-            annotated_image = label_annotator.annotate(
-                scene=annotated_image, detections=detections, labels=labels)
-
-        return annotated_image
-
-    else:
-        return
-
-
-def format_output(parameters, category_map, images, image_annotations_json, annotated_images):
-    results = []
-
+def write_coco_output_to_catalog(parameters, category_map, images, image_annotations_json, output_path):
     info = {
         "description": parameters["description"],
         "url": parameters["model_url"],
@@ -91,16 +59,20 @@ def format_output(parameters, category_map, images, image_annotations_json, anno
         "images": images,
         "annotations": image_annotations_json
     }
+    
+    output_dir = os.path.join(output_path, parameters["model_id"])
+    os.makedirs(output_dir, exist_ok=True)
 
-    results.append({
-        "coco_json_output": json.dumps(coco_output),
-        "annotated_images": annotated_images
-    })
+    final_output_path = output_path + parameters["model_id"] + "/" + parameters["output_file_name"] + ".json"
+    print("Writing output to: " + final_output_path) 
+    # can't use dbutils.fs.put here do to spark limitations
+    with open(final_output_path, "w", encoding="utf-8") as f:
+        json.dump(coco_output, f, ensure_ascii=False)
 
-    return results
+    return
 
 
-def ml_flow_log_run(model, input_example):
+def ml_flow_log_run(model_name, model, input_example):
     roboflow_pyfunc_model = model
 
     output_example = roboflow_pyfunc_model.predict(context=None, model_input=input_example)
@@ -109,7 +81,7 @@ def ml_flow_log_run(model, input_example):
 
     with mlflow.start_run():
         mlflow.pyfunc.log_model(
-            artifact_path="roboflow_model",
+            artifact_path=model_name,
             python_model=model,
             signature=signature,
             input_example=input_example,
@@ -121,3 +93,63 @@ def ml_flow_log_run(model, input_example):
                 ]
             }
         )
+
+def save_annotated_image(image_path, output_dir, annotated_image):
+    base = os.path.basename(image_path)
+    stem, ext = os.path.splitext(base)
+    out_path = os.path.join(output_dir, f"{stem}_annotated{ext}")
+
+    ok = cv2.imwrite(out_path, annotated_image)
+    if not ok:
+        print(f"Failed to write: {out_path}")
+    return
+
+def generate_labels(detections, classes):
+    labels = []
+    if detections.class_id is not None and len(detections) > 0:
+        confs = detections.confidence if detections.confidence is not None else [None] * len(detections)
+        for cid, conf in zip(detections.class_id, confs):
+            cname = classes[cid] if (cid is not None and cid < len(classes)) else "N/A"
+            labels.append(f"{cname} {conf:.2f}" if conf is not None else cname)
+    return labels
+
+def annotate_images(images_dir, coco_json_file_path, model_type, model_id):
+    output_dir = os.path.join(images_dir, model_id, "annotated_images")
+    os.makedirs(output_dir, exist_ok=True)
+
+    dataset = sv.DetectionDataset.from_coco(
+        images_directory_path=images_dir,
+        annotations_path=coco_json_file_path
+    )
+
+    if (model_type != "object_classification"):
+        label_annotator = sv.LabelAnnotator()
+        classes = dataset.classes
+
+        if (model_type == "object_detection"):
+            bounding_box_annotator = sv.BoxAnnotator()
+
+            for path, image, detections in dataset:
+                labels = generate_labels(detections, classes)
+
+                annotated_image = bounding_box_annotator.annotate(
+                    scene=image, detections=detections)
+                annotated_image = label_annotator.annotate(
+                    scene=annotated_image, detections=detections, labels=labels)
+                
+                save_annotated_image(path, output_dir, annotated_image)
+
+        elif (model_type == "instance_segmentation"):
+            mask_annotator = sv.MaskAnnotator()
+
+            for path, image, detections in dataset:
+                labels = generate_labels(detections, classes)
+
+                annotated_image = mask_annotator.annotate(
+                    scene=image, detections=detections)
+                annotated_image = label_annotator.annotate(
+                    scene=annotated_image, detections=detections, labels=labels)
+                save_annotated_image(path, output_dir, annotated_image)
+    else:
+        return
+
