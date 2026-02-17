@@ -5,7 +5,7 @@ import os
 
 logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 
-CAMERA_OPTIONS = ["rgb", "multi-spec", "thermal"]
+CAMERA_OPTIONS = ["rgb", "multi-spec", "thermal", 'lidar']
 
 
 # ----------------------------------------------------------Helper------------------------------------------------------#

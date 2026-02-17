@@ -142,7 +142,6 @@ def square_up_image(img):
     # center (x,y), size (w,h), angle
     rect = cv2.minAreaRect(coords)
     angle = rect[-1]
-    print(angle)
 
     # 5. Correct the angle
     # OpenCV's angle logic can be quirky depending on version
@@ -150,7 +149,7 @@ def square_up_image(img):
         angle = -(90 + angle)
     else:
         angle = 90-angle
-    print(angle)
+
     # 6. Perform the rotation
     (h, w) = img.shape[:2]
     center = (w // 2, h // 2)
