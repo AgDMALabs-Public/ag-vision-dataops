@@ -25,13 +25,18 @@ def roboflow_to_coco(predictions_json_list, image_id, category_map, parameters):
             x_min = pred_json.get("x") - pred_json.get("width") / 2
             y_min = pred_json.get("y") - pred_json.get("height") / 2
 
+            flat_polygon = []
+            if pred_json.get("points") is not None:
+                for point in pred_json.get("points"):
+                    flat_polygon.extend([float(point["x"]), float(point["y"])])
+
             annotations.append({
                 "id": annotation_id,
                 "image_id": image_id,
                 "category_id": category_map[pred_json["class_name"]],
                 "bbox": [float(x_min), float(y_min), float(pred_json.get("width")), float(pred_json.get("height"))],
                 "area": float(pred_json.get("width") * pred_json.get("height")),
-                "segmentation": pred_json.get("points") if pred_json.get("points") is not None else [],
+                "segmentation": [flat_polygon] if flat_polygon != [] else [],
                 "iscrowd": 0
             })
 
@@ -114,15 +119,16 @@ def generate_labels(detections, classes):
     return labels
 
 def annotate_images(images_dir, coco_json_file_path, model_type, model_id):
-    output_dir = os.path.join(images_dir, model_id, "annotated_images")
-    os.makedirs(output_dir, exist_ok=True)
-
-    dataset = sv.DetectionDataset.from_coco(
-        images_directory_path=images_dir,
-        annotations_path=coco_json_file_path
-    )
-
     if (model_type != "object_classification"):
+        output_dir = os.path.join(images_dir, model_id, "annotated_images")
+        os.makedirs(output_dir, exist_ok=True)
+
+        dataset = sv.DetectionDataset.from_coco(
+            images_directory_path=images_dir,
+            annotations_path=coco_json_file_path,
+            force_masks=True if model_type == "instance_segmentation" else False
+        )
+
         label_annotator = sv.LabelAnnotator()
         classes = dataset.classes
 
