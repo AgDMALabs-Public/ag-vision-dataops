@@ -329,29 +329,6 @@ class AgImage:
                                                                   version=version,
                                                                   overwrite=overwrite)
 
-    def add_image_quality_blur_metrics_to_metadata(self, pred: float, confidence: float, version: str, model_id: str,
-                                                   overwrite: bool = False):
-        """
-        Adds blur metrics related to image quality to the metadata.
-
-        Arguments:
-        pred : float
-            Predicted value for the blur metric.
-        model_name : str
-            Name of the model used to generate the blur metric.
-        overwrite : bool, optional
-            Flag to indicate if existing metadata should be overwritten. Default is False.
-        """
-        self.metadata = sch.add_first_level_nested_model_metadata(metadata_model=self.metadata,
-                                                                  root_model=im.ImageQuality(),
-                                                                  root_key='image_quality',
-                                                                  first_level_model=bm.MLOutput(),
-                                                                  first_level_key='blur_score',
-                                                                  pred=pred,
-                                                                  confidence=confidence,
-                                                                  model_id=model_id,
-                                                                  version=version,
-                                                                  overwrite=overwrite)
 
     def add_acq_properties_object_resolution_ml_metrics_to_metadata(self,
                                                                     pred: float,
@@ -424,4 +401,32 @@ class AgImage:
                                                                 root_key='acquisition_properties',
                                                                 first_level_key='setting',
                                                                 first_level_value=setting,
+                                                                overwrite=overwrite)
+
+    def add_image_agronomic_properties_to_metadata(self, crop_type: str = None, growth_stage: float = None,
+                                                   soil_color: str=None, overwrite: bool = False):
+        """
+        """
+        if crop_type:
+            self.metadata = sch.add_first_level_nested_metadata(metadata_model=self.metadata,
+                                                                root_model=im.AgronomicProperties(),
+                                                                root_key='agronomic_properties',
+                                                                first_level_key='crop_type',
+                                                                first_level_value=crop_type,
+                                                                overwrite=overwrite)
+
+        if growth_stage:
+            self.metadata = sch.add_first_level_nested_metadata(metadata_model=self.metadata,
+                                                                root_model=im.AgronomicProperties(),
+                                                                root_key='agronomic_properties',
+                                                                first_level_key='growth_stage',
+                                                                first_level_value=growth_stage,
+                                                                overwrite=overwrite)
+
+        if soil_color:
+            self.metadata = sch.add_first_level_nested_metadata(metadata_model=self.metadata,
+                                                                root_model=im.AgronomicProperties(),
+                                                                root_key='agronomic_properties',
+                                                                first_level_key='soil_color',
+                                                                first_level_value=soil_color,
                                                                 overwrite=overwrite)
