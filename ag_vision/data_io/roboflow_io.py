@@ -1,6 +1,7 @@
 import os
 import shutil
 import json
+import pandas as pd
 
 from tqdm import tqdm
 from ag_vision.constants import paths
@@ -10,6 +11,7 @@ from ag_vision.data_io import local_io as lio
 from ag_vision.annotation import annotation as anno
 import logging
 import tempfile
+import glob
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,9 @@ def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotat
         split=split,  # Optional: "train", "valid", or "test"
         batch_name=batch_name
     )
+
+
+def generate_annotation_path_from_img(image_path):
 
 
 def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
@@ -103,6 +108,7 @@ def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, projec
             print(f'Skipping {f_name} as its file type is not supported.')
 
     annotation_data_list = []
+
     if annotation:
         print("Generating Merged Annotation File...")
         for img in tqdm(imgs):
@@ -168,20 +174,14 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
                                         annotation=False)
 
 
-def _save_image_from_annotation_download(download_dir: str, save_dir: str):
-    for split in SPLIT_LIST:
-        split_dir = download_dir + '/' + split
-        if os.path.exists(split_dir):
-            image_list = os.listdir(split_dir)
-            image_list = [x for x in image_list if '.json' not in x]
-
-            for img_name in tqdm(image_list):
-                save_path = save_dir + '/' + img_name.replace('.rf.', '_rf_')
-                if os.path.exists(save_path):
-                    print('The image already exists, skipping download.')
-                    continue
-                else:
-                    shutil.copy(download_dir + '/' + split + '/' + img_name, save_path)
+def _save_image_from_annotation_download(save_df: pd.DataFrame):
+    for idx, row in save_df.iterrows():
+        if os.path.exists(row['save_path']):
+            print('The image already exists, skipping download.')
+            continue
+        else:
+            print(f'Saving {row['save_path']} from Roboflow ...')
+            shutil.copy(row['tmp_name'], row['save_path'])
 
 
 def _save_image_from_classification_download(download_dir: str, save_dir: str):
@@ -205,106 +205,168 @@ def _save_image_from_classification_download(download_dir: str, save_dir: str):
                         shutil.copy(download_dir + '/' + split + '/' + cls + '/' + img_name, save_path)
 
 
-def download_annotation_batch_from_roboflow(rf_project, dataset_version: int, project_path: str, annotation_type: str,
-                                            task_name: str, batch_name: str, download_date: str, platform: str,
-                                            save_images: bool = False):
+def _generate_annotation_image_table(glob_path):
+    img_list = glob.glob(glob_path)
+
+    img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
+
+    df = pd.DataFrame(img_list, columns=['img_path'])
+    df['id'] = df['img_path'].apply(lambda x: os.path.splitext(os.path.basename(x))[0])
+    df['batch_name'] = df['img_path'].apply(lambda x: x.split('/')[-3])
+    df['task'] = df['img_path'].apply(lambda x: x.split('/')[-4])
+    df['batch'] = df['img_path'].apply(lambda x: x.split('/')[-3])
+
+    return df
+
+
+def _generate_rf_image_table(temp_data_dir, project_path: str, annotation_type: str, task_name: str,
+                             splits=['train', 'valid', 'test']):
+    df_list = []
+    for split in splits:
+        img_dir = f"{temp_data_dir}/{split}"
+        split_file = f"{img_dir}/_annotations.coco.json"
+        if os.path.exists(split_file):
+            data = json.load(open(split_file))
+            img_filepath_list = []
+            img_name_list = []
+
+            for x in data['images']:
+                img_filepath_list.append(x['file_name'])
+                img_name_list.append(x['extra']['name'])
+
+            df = pd.DataFrame({'img_path': img_filepath_list, 'img_name': img_name_list})
+            df['img_id'] = df['img_name'].apply(lambda x: os.path.splitext(x)[0])
+            df['ext'] = df['img_name'].apply(lambda x: os.path.splitext(x)[1])
+            df['img_id_len'] = df['img_id'].apply(lambda x: len(x))
+            # uuid's have a len of 36 this will only affect images that do not have a image saved alread on the FG side.
+            df['img_id'] = df['img_id'].apply(lambda x: x if len(x) < 36 else x[-36:])
+            df['img_dir'] = img_dir
+
+            # this only only be used for iamges that are not already saved in a batch.
+            df['save_path'] = df.apply(lambda x:
+                                       paths.annotation_image_path(project=project_path,
+                                                                   annotation_type=annotation_type,
+                                                                   task_name=task_name,
+                                                                   batch_name='roboflow',
+                                                                   f_name=f'{x['img_id']}.{x['ext']}'))
+
+            df_list.append(df)
+
+    return pd.concat(df_list)
+
+
+def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project_path: str, annotation_type: str,
+                                            task_name: str, download_date: str, platform: str):
     assert platform in ['db', 'local'], f"Platform {platform} is not supported. needs to be db or local"
 
     # get a list of images that in the batch
-    imgs_path = paths.annotation_image_path(project=project_path,
-                                            annotation_type=annotation_type,
-                                            task_name=task_name,
-                                            batch_name=batch_name,
-                                            f_name='none.jpg')
+    o_glob_path = paths.annotation_image_path(project=project_path,
+                                              annotation_type=annotation_type,
+                                              task_name=task_name,
+                                              batch_name='*',
+                                              f_name='*.jpg')
 
-    img_dir_name = os.path.dirname(imgs_path)
-    if not os.path.exists(img_dir_name):
-        os.makedirs(img_dir_name, exist_ok=True)
+    o_img_df = _generate_annotation_image_table(glob_path=o_glob_path)
 
     if annotation_type in ['object_detection', 'instance_segmentation', 'semantic_segmentation']:
-        dataset = rf_project.version(dataset_version).download("coco")
+        data_dir = rf_workspace.search_export(query=f"project:{rf_project_id}",
+                                              format="coco",
+                                              dataset=rf_project_id,
+                                              location=tempfile.mktemp())
 
-        if save_images:
-            _save_image_from_annotation_download(download_dir=dataset.location,
-                                                 save_dir=img_dir_name)
+        n_img_df = _generate_rf_image_table(temp_data_dir=data_dir,
+                                            project_path=project_path,
+                                            task_name=task_name,
+                                            splits=SPLIT_LIST)
 
-        # get a list of the images in the dir
-        img_list = os.listdir(img_dir_name)
-        img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
+        # if an images is no the the final dir, then we will save it to a roboflow folder.
+        img_save_df = n_img_df[~n_img_df['img_id'].isin(o_img_df['img_id'])]
+
+        if len(img_save_df) > 0:
+            _save_image_from_annotation_download(save_df=img_save_df)
+
+        # get a list of all the images again after saving.
+        o_img_df = _generate_annotation_image_table(glob_path=o_glob_path)
+        anno_img_df = o_img_df.merge(n_img_df, on='img_id', how='inner')
 
         for split in SPLIT_LIST:
-            split_file = dataset.location + f'/{split}/_annotations.coco.json'
-            if os.path.exists(split_file):
-                data = json.load(open(split_file))
+            anno_save_df = anno_img_df[anno_img_df['split'] == split]
+            split_file = data_dir + f'/{split}/_annotations.coco.json'
+            if not os.path.exists(split_file):
+                continue
 
-                for x in range(len(data['images'])):
-                    if save_images:
-                        anno_img_name = data['images'][x]['file_name'].replace('.rf.', '_rf_')
-                    else:
-                        anno_img_name = data['images'][x]['extra']['name']
+            data = json.load(open(split_file))
 
-                    uid = os.path.splitext(anno_img_name)[0]
+            print(f"Number of images in the split {split}: {len(anno_save_df)}")
+            for x in range(len(data['images'])):
+                img_row = anno_img_df[anno_img_df['split'] == split]
+                img_row = img_row[img_row['img_rf_name'] == data['images'][x]['file_name']]
+                img_row.reset_index(drop=True, inplace=True)
 
-                    if anno_img_name in img_list:
-                        print(f"Saving {anno_img_name} from Roboflow ...")
-                        new_data = aio.extract_single_coco_json_annotations(data=data,
-                                                                            index=x,
-                                                                            split=split,
-                                                                            image_name=anno_img_name)
+                assert len(
+                    img_row) == 1, f"More than one image with the same name {data['images'][x]['file_name']} found."
 
-                        anno_path = paths.annotation_path(project=project_path,
-                                                          annotation_type=annotation_type,
-                                                          task_name=task_name,
-                                                          batch_name=batch_name,
-                                                          download_date=download_date,
-                                                          f_name=uid + '.json')
-                        if platform == 'db':
-                            dbio.save_json_to_databricks(data=new_data,
-                                                         file_name=anno_path)
-                        elif platform == 'local':
-                            lio.save_json(data=new_data,
-                                          file_path=anno_path)
-                        else:
-                            raise ValueError(f"Platform {platform} is not supported.")
+                img_name = img_row['save_img_name'].iloc[0]
+                uid = img_row['img_id'].iloc[0]
 
-                    else:
-                        print(f"{anno_img_name} Is not in this batch, skipping saving ...")
+                print(f"Saving {img_name} annotation from Roboflow ...")
+                new_data = aio.extract_single_coco_json_annotations(data=data,
+                                                                    index=x,
+                                                                    split=split,
+                                                                    image_name=img_name)
+
+                anno_path = paths.annotation_path(project=project_path,
+                                                  annotation_type=annotation_type,
+                                                  task_name=task_name,
+                                                  batch_name=img_row['batch'].iloc[0],
+                                                  download_date=download_date,
+                                                  f_name=uid + '.json')
+                if platform == 'db':
+                    dbio.save_json_to_databricks(data=new_data,
+                                                 file_name=anno_path)
+                elif platform == 'local':
+                    lio.save_json(data=new_data,
+                                  file_path=anno_path)
+                else:
+                    raise ValueError(f"Platform {platform} is not supported.")
 
     elif annotation_type == 'classification':
-        dataset = rf_project.version(dataset_version).download("folder",
-                                                               location=f"{tempfile.mktemp()}/roboflow_data")
+        data_dir = rf_workspace.search_export(query=f"project:{rf_project_id}",
+                                              format="coco",
+                                              dataset=rf_project_id,
+                                              location=tempfile.mktemp())
 
-        if save_images:
-            _save_image_from_classification_download(download_dir=dataset.location,
-                                                     save_dir=img_dir_name)
+        class_df = anno.generate_classification_df(folder_location=data_dir)
 
-        # get a list of the images in the dir
-        img_list = os.listdir(img_dir_name)
-        img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
-        print(f"Number of images in the batch: {len(img_list)}")
+        img_save_df = class_df[~class_df['img_id'].isin(o_img_df['img_id'])]
 
-        class_df = anno.generate_classification_df(folder_location=dataset.location,
-                                                   img_list=img_list,
-                                                   downloaded_images=save_images)
+        if len(img_save_df) > 0:
+            _save_image_from_annotation_download(save_df=img_save_df)
 
         print(f"Number of annotations in the batch: {len(class_df)}")
 
-        anno_path = paths.annotation_path(project=project_path,
-                                          annotation_type=annotation_type,
-                                          task_name=task_name,
-                                          batch_name=batch_name,
-                                          download_date=download_date,
-                                          f_name='classification_labels.csv')
+        save_df = class_df.merge(o_img_df, on='img_id', how='inner')
+        save_df['batch'] = save_df['batch'].fillna('roboflow')
 
-        print(f"Saving classification labels to {anno_path}")
+        for idx, gdf in save_df.groupby('batch'):
+            anno_path = paths.annotation_path(project=project_path,
+                                              annotation_type=annotation_type,
+                                              task_name=task_name,
+                                              batch_name=idx,
+                                              download_date=download_date,
+                                              f_name='classification_labels.csv')
 
-        if platform == 'db':
-            dbio.save_csv_to_databricks(data=class_df,
-                                        file_name=anno_path)
-        elif platform == 'local':
-            class_df.to_csv(anno_path)
-        else:
-            raise ValueError(f"Platform {platform} is not supported.")
+            print(f"Saving classification labels to {anno_path}")
+            gdf = gdf[['img_id', 'save_image_name', 'class', 'split']]
+
+
+            if platform == 'db':
+                dbio.save_csv_to_databricks(data=gdf,
+                                            file_name=anno_path)
+            elif platform == 'local':
+                gdf.to_csv(anno_path)
+            else:
+                raise ValueError(f"Platform {platform} is not supported.")
 
     else:
         raise ValueError(f"Annotation type {annotation_type} is not supported.")

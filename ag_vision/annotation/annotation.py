@@ -1,7 +1,14 @@
 import pandas as pd
 import os
+from ag_vision.constants import paths
 
-def generate_classification_df(folder_location: str, img_list: list, downloaded_images: bool=False):
+def generate_rf_img_id(in_str):
+    a = in_str.split('.rf.')[0]
+    a = a.split('_')[:-1]
+    return '_'.join(a)
+
+
+def generate_classification_df(folder_location: str, project_path: str, annotation_type: str, task_name: str = 'roboflow'):
     df_list = []
     for split in ['train', 'test', 'valid']:
         split_dir = f"{folder_location}/{split}"
@@ -9,25 +16,31 @@ def generate_classification_df(folder_location: str, img_list: list, downloaded_
             print(f"Generating annotations from {split_dir}")
             a = os.listdir(f"{folder_location}/{split}")
             for label in a:
-                rf_files =  os.listdir(f"{folder_location}/{split}/{label}")
+                tmp_dir = f"{folder_location}/{split}/{label}"
+                rf_files =  os.listdir(tmp_dir)
                 df = pd.DataFrame({'rf_file_name': rf_files})
+                df['tmp_path'] = tmp_dir + '/' + df['rf_file_name']
                 df.loc[:, 'class'] = label
                 df.loc[:, 'split'] = split
-                if downloaded_images:
-                    df.loc[:, 'rf_file_name'] = df['rf_file_name'].apply(lambda x: x.replace('.rf.', '_rf_'))
-                    df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: os.path.splitext(x)[0])
-                else:
-                    # if we pushed the images up the first part of the roboflow id is the original name.
-                    df.loc[:, 'image_id'] = df['rf_file_name'].apply(lambda x: x.split('_')[0])
+
+                df['img_id'] = df['rf_file_name'].apply(lambda x: generate_rf_img_id(x))
+                df['ext'] = df['rf_file_name'].apply(lambda x: os.path.splitext(x)[1])
+                df['img_id_len'] = df['img_id'].apply(lambda x: len(x))
+                # uuid's have a len of 36 this will only affect images that do not have a image saved alread on the FG side.
+                df['img_id'] = df['img_id'].apply(lambda x: x if len(x) < 36 else x[-36:])
+                df['save_img_name'] = df['img_id'] + df['ext']
+
+                df['save_path'] = df.apply(lambda x:
+                                           paths.annotation_image_path(project=project_path,
+                                                                       annotation_type=annotation_type,
+                                                                       task_name=task_name,
+                                                                       batch_name='roboflow',
+                                                                       f_name=f'{x.save_img_name}'),
+                                           axis=1)
 
                 df_list.append(df)
 
-    id_list = [os.path.splitext(x)[0] for x in img_list]
-
     final_df = pd.concat(df_list).reset_index(drop=True)
     print(f"There were {len(final_df)} annotation found.")
-    # only keeps annotations for images that are in the img_list
-    final_df = final_df[final_df['image_id'].isin(id_list)]
-    print(f"{len(final_df)} annotation belong to this batch.")
 
     return final_df
