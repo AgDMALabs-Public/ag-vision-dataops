@@ -173,6 +173,8 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
 
 def _save_image_from_annotation_download(save_df: pd.DataFrame):
     for idx, row in save_df.iterrows():
+        img_dir = os.path.dirname(str(row['save_path']))
+        os.makedirs(img_dir, exist_ok=True)
         if os.path.exists(str(row['save_path'])):
             print('The image already exists, skipping download.')
             continue
@@ -348,12 +350,13 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
         img_save_df = class_df[~class_df['img_id'].isin(o_img_df['img_id'])]
 
         if len(img_save_df) > 0:
+            img_name = img_save_df['save_name'].iloc[0]
             _save_image_from_annotation_download(save_df=img_save_df)
 
         print(f"Number of annotations in the batch: {len(class_df)}")
 
         save_df = class_df.merge(o_img_df, on='img_id', how='inner')
-        save_df['batch'] = save_df['batch'].fillna('roboflow')
+        save_df['task'] = save_df['task'].fillna('roboflow')
 
         for idx, gdf in save_df.groupby('batch'):
             anno_path = paths.annotation_path(project=project_path,
