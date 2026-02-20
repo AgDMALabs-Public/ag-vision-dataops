@@ -345,7 +345,8 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
         class_df = anno.generate_classification_df(folder_location=data_dir,
                                                    project_path=project_path,
-                                                   annotation_type=annotation_type)
+                                                   annotation_type=annotation_type,
+                                                   task_name=task_name)
 
         img_save_df = class_df[~class_df['img_id'].isin(o_img_df['img_id'])]
 
@@ -355,7 +356,7 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
         print(f"Number of annotations in the batch: {len(class_df)}")
 
         save_df = class_df.merge(o_img_df, on='img_id', how='inner')
-        save_df['task'] = save_df['task'].fillna('roboflow')
+        save_df['batch'] = save_df['batch'].fillna('roboflow')
 
         for idx, gdf in save_df.groupby('batch'):
             anno_path = paths.annotation_path(project=project_path,
@@ -366,7 +367,7 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
                                               f_name='classification_labels.csv')
 
             print(f"Saving classification labels to {anno_path}")
-            gdf = gdf[['img_id', 'save_image_name', 'class', 'split']]
+            gdf = gdf[['img_id', 'save_img_name', 'class', 'split']]
 
             if platform == 'db':
                 dbio.save_csv_to_databricks(data=gdf,
