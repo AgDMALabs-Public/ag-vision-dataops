@@ -355,6 +355,9 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
         print(f"Number of annotations in the batch: {len(class_df)}")
 
+        # get a list of all the images again after saving.
+        o_img_df = _generate_annotation_image_table(glob_path=o_glob_path)
+        # merge with the class data.
         save_df = class_df.merge(o_img_df, on='img_id', how='inner')
         save_df['batch'] = save_df['batch'].fillna('roboflow')
 
@@ -367,7 +370,7 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
                                               f_name='classification_labels.csv')
 
             print(f"Saving classification labels to {anno_path}")
-            gdf = gdf[['img_id', 'save_img_name', 'class', 'split']]
+            gdf = gdf[['img_id', 'save_img_name', 'class', 'split', 'task', 'batch']]
 
             if platform == 'db':
                 dbio.save_csv_to_databricks(data=gdf,
