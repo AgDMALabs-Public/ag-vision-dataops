@@ -8,7 +8,7 @@ def generate_rf_img_id(in_str):
     return '_'.join(a)
 
 
-def generate_classification_df(folder_location: str, project_path: str, annotation_type: str, task_name: str = 'roboflow'):
+def generate_classification_df(folder_location: str, project_path: str, annotation_type: str, task_name: str):
     df_list = []
     for split in ['train', 'test', 'valid']:
         split_dir = f"{folder_location}/{split}"
