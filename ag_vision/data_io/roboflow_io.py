@@ -337,7 +337,7 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
     elif annotation_type == 'classification':
         data_dir = rf_workspace.search_export(query=f"project:{rf_project_id}",
-                                              format="coco",
+                                              format="folder",
                                               dataset=rf_project_id,
                                               location=tempfile.mktemp())
 
