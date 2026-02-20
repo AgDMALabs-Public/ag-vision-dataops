@@ -350,7 +350,6 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
         img_save_df = class_df[~class_df['img_id'].isin(o_img_df['img_id'])]
 
         if len(img_save_df) > 0:
-            img_name = img_save_df['save_name'].iloc[0]
             _save_image_from_annotation_download(save_df=img_save_df)
 
         print(f"Number of annotations in the batch: {len(class_df)}")
