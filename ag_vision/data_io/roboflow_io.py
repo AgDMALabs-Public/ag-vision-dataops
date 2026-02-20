@@ -173,12 +173,12 @@ def upload_image_batch_to_roboflow(rf_project, annotation_type: str, project_pat
 
 def _save_image_from_annotation_download(save_df: pd.DataFrame):
     for idx, row in save_df.iterrows():
-        if os.path.exists(row['save_path']):
+        if os.path.exists(str(row['save_path'])):
             print('The image already exists, skipping download.')
             continue
         else:
             print(f'Saving {row["save_path"]} from Roboflow ...')
-            shutil.copy(row['tmp_name'], row['save_path'])
+            shutil.copy(str(row['tmp_name']), str(row['save_path']))
 
 
 def _save_image_from_classification_download(download_dir: str, save_dir: str):
@@ -208,7 +208,7 @@ def _generate_annotation_image_table(glob_path):
     img_list = [x for x in img_list if os.path.splitext(x)[1] in IMG_EXTENSIONS]
 
     df = pd.DataFrame(img_list, columns=['img_path'])
-    df['id'] = df['img_path'].apply(lambda x: os.path.splitext(os.path.basename(x))[0])
+    df['img_id'] = df['img_path'].apply(lambda x: os.path.splitext(os.path.basename(x))[0])
     df['batch_name'] = df['img_path'].apply(lambda x: x.split('/')[-3])
     df['task'] = df['img_path'].apply(lambda x: x.split('/')[-4])
     df['batch'] = df['img_path'].apply(lambda x: x.split('/')[-3])
@@ -216,8 +216,7 @@ def _generate_annotation_image_table(glob_path):
     return df
 
 
-def _generate_rf_image_table(temp_data_dir, project_path: str, annotation_type: str, task_name: str,
-                             splits=['train', 'valid', 'test']):
+def _generate_rf_image_table(temp_data_dir, project_path, task_name, annotation_type, splits):
     df_list = []
     for split in splits:
         img_dir = f"{temp_data_dir}/{split}"
@@ -226,18 +225,25 @@ def _generate_rf_image_table(temp_data_dir, project_path: str, annotation_type: 
             data = json.load(open(split_file))
             img_filepath_list = []
             img_name_list = []
+            img_index = []
 
             for x in data['images']:
+                img_index.append(x['id'])
                 img_filepath_list.append(x['file_name'])
                 img_name_list.append(x['extra']['name'])
 
-            df = pd.DataFrame({'img_path': img_filepath_list, 'img_name': img_name_list})
+            df = pd.DataFrame({'img_rf_name': img_filepath_list,
+                               'img_name': img_name_list,
+                               'img_index': img_index})
+
             df['img_id'] = df['img_name'].apply(lambda x: os.path.splitext(x)[0])
             df['ext'] = df['img_name'].apply(lambda x: os.path.splitext(x)[1])
             df['img_id_len'] = df['img_id'].apply(lambda x: len(x))
             # uuid's have a len of 36 this will only affect images that do not have a image saved alread on the FG side.
             df['img_id'] = df['img_id'].apply(lambda x: x if len(x) < 36 else x[-36:])
-            df['img_dir'] = img_dir
+            df['tmp_path'] = img_dir + '/' + df['img_rf_name']
+            df['split'] = split
+            df['save_img_name'] = df['img_id'] + df['ext']
 
             # this only only be used for iamges that are not already saved in a batch.
             df['save_path'] = df.apply(lambda x:
@@ -245,7 +251,8 @@ def _generate_rf_image_table(temp_data_dir, project_path: str, annotation_type: 
                                                                    annotation_type=annotation_type,
                                                                    task_name=task_name,
                                                                    batch_name='roboflow',
-                                                                   f_name=f'{x['img_id']}.{x['ext']}'))
+                                                                   f_name=f'{x.save_img_name}'),
+                                       axis=1)
 
             df_list.append(df)
 
@@ -274,6 +281,7 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
         n_img_df = _generate_rf_image_table(temp_data_dir=data_dir,
                                             project_path=project_path,
                                             task_name=task_name,
+                                            annotation_type=annotation_type,
                                             splits=SPLIT_LIST)
 
         # if an images is no the the final dir, then we will save it to a roboflow folder.
@@ -333,7 +341,9 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
                                               dataset=rf_project_id,
                                               location=tempfile.mktemp())
 
-        class_df = anno.generate_classification_df(folder_location=data_dir)
+        class_df = anno.generate_classification_df(folder_location=data_dir,
+                                                   project_path=project_path,
+                                                   annotation_type=annotation_type)
 
         img_save_df = class_df[~class_df['img_id'].isin(o_img_df['img_id'])]
 
