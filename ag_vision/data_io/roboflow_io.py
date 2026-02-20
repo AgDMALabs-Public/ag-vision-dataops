@@ -44,9 +44,6 @@ def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotat
     )
 
 
-def generate_annotation_path_from_img(image_path):
-
-
 def upload_annotation_batch_to_roboflow(rf_project, annotation_type: str, project_path: str, task_name: str,
                                         batch_name: str, download_date: str, split: str, tmp_copy: bool = True,
                                         img_extension: list = IMG_EXTENSIONS,
@@ -180,7 +177,7 @@ def _save_image_from_annotation_download(save_df: pd.DataFrame):
             print('The image already exists, skipping download.')
             continue
         else:
-            print(f'Saving {row['save_path']} from Roboflow ...')
+            print(f'Saving {row["save_path"]} from Roboflow ...')
             shutil.copy(row['tmp_name'], row['save_path'])
 
 
@@ -358,7 +355,6 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
             print(f"Saving classification labels to {anno_path}")
             gdf = gdf[['img_id', 'save_image_name', 'class', 'split']]
-
 
             if platform == 'db':
                 dbio.save_csv_to_databricks(data=gdf,
