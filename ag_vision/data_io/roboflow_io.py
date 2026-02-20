@@ -178,7 +178,7 @@ def _save_image_from_annotation_download(save_df: pd.DataFrame):
             continue
         else:
             print(f'Saving {row["save_path"]} from Roboflow ...')
-            shutil.copy(str(row['tmp_name']), str(row['save_path']))
+            shutil.copy(str(row['tmp_path']), str(row['save_path']))
 
 
 def _save_image_from_classification_download(download_dir: str, save_dir: str):
