@@ -306,36 +306,38 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
             print(f"Number of images in the split {split}: {len(anno_save_df)}")
             for x in range(len(data['images'])):
+
                 img_row = anno_img_df[anno_img_df['split'] == split]
                 img_row = img_row[img_row['img_rf_name'] == data['images'][x]['file_name']]
                 img_row.reset_index(drop=True, inplace=True)
 
-                assert len(
-                    img_row) == 1, f"More than one image with the same name {data['images'][x]['file_name']} found."
-
                 img_name = img_row['save_img_name'].iloc[0]
                 uid = img_row['img_id'].iloc[0]
+                try:
+                    assert len(img_row) == 1, f"More than one image with the same name {data['images'][x]['file_name']} found."
 
-                print(f"Saving {img_name} annotation from Roboflow ...")
-                new_data = aio.extract_single_coco_json_annotations(data=data,
-                                                                    index=x,
-                                                                    split=split,
-                                                                    image_name=img_name)
+                    print(f"Saving {img_name} annotation from Roboflow ...")
+                    new_data = aio.extract_single_coco_json_annotations(data=data,
+                                                                        index=x,
+                                                                        split=split,
+                                                                        image_name=img_name)
 
-                anno_path = paths.annotation_path(project=project_path,
-                                                  annotation_type=annotation_type,
-                                                  task_name=task_name,
-                                                  batch_name=img_row['batch'].iloc[0],
-                                                  download_date=download_date,
-                                                  f_name=uid + '.json')
-                if platform == 'db':
-                    dbio.save_json_to_databricks(data=new_data,
-                                                 file_name=anno_path)
-                elif platform == 'local':
-                    lio.save_json(data=new_data,
-                                  file_path=anno_path)
-                else:
-                    raise ValueError(f"Platform {platform} is not supported.")
+                    anno_path = paths.annotation_path(project=project_path,
+                                                      annotation_type=annotation_type,
+                                                      task_name=task_name,
+                                                      batch_name=img_row['batch'].iloc[0],
+                                                      download_date=download_date,
+                                                      f_name=uid + '.json')
+                    if platform == 'db':
+                        dbio.save_json_to_databricks(data=new_data,
+                                                     file_name=anno_path)
+                    elif platform == 'local':
+                        lio.save_json(data=new_data,
+                                      file_path=anno_path)
+                    else:
+                        raise ValueError(f"Platform {platform} is not supported.")
+                except Exception as e:
+                    print(f"Error saving {img_name} annotation: {e}")
 
     elif annotation_type == 'classification':
         data_dir = rf_workspace.search_export(query=f"project:{rf_project_id}",
