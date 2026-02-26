@@ -310,7 +310,9 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
                 img_row = anno_img_df[anno_img_df['split'] == split]
                 img_row = img_row[img_row['img_rf_name'] == data['images'][x]['file_name']]
                 img_row.reset_index(drop=True, inplace=True)
-
+                if len(img_row) == 0:
+                    print("No Annotations were found.")
+                    continue
                 img_name = img_row['save_img_name'].iloc[0]
                 uid = img_row['img_id'].iloc[0]
                 try:
