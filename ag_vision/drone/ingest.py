@@ -38,7 +38,9 @@ class DroneDataIngest(AgImageIngest):
             cloud_client: The cloud client instance used for uploading files.
         """
         # Call the initializer of the parent class 'Image' to handle the common attributes
-        super().__init__(platform, cloud_bucket, cloud_client)
+        super().__init__(platform=platform,
+                         cloud_bucket=cloud_bucket,
+                         cloud_client=cloud_client)
         self.drone_mission_dir = None
         self.flight_date = pd.to_datetime(flight_date).strftime("%Y-%m-%d")
         self.flight_metadata = flight_metadata
