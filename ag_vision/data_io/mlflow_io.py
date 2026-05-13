@@ -119,7 +119,7 @@ def generate_labels(detections, classes):
     return labels
 
 def annotate_images(images_dir, coco_json_file_path, model_type, model_id):
-    if (model_type != "object_classification"):
+    if (model_type != "classification"):
         output_dir = os.path.join(images_dir, model_id, "annotated_images")
         os.makedirs(output_dir, exist_ok=True)
 
