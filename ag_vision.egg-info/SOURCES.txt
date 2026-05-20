@@ -42,5 +42,6 @@ ag_vision/pipelines/image_processing.py
 ag_vision/rover/__init__.py
 ag_vision/rover/image.py
 ag_vision/rover/ingest.py
+tests/test_drone_ingest.py
 tests/test_field_images.py
 tests/test_paths.py

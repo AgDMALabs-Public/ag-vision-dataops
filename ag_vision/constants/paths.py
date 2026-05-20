@@ -518,6 +518,25 @@ def drone_raw_flight_data(mission_dir: str, flight_date: str, camera: str, file_
     return f"{mission_dir}/{flight_date}/raw_data/{camera}/{file_name}"
 
 
+def drone_results_path(mission_dir: str, flight_date: str, camera: str, file_name: str) -> str:
+    """
+    Constructs the full file path for a specific image from a drone flight.
+
+    Args:
+    mission_dir (str): The base directory path for the drone flight.
+    image_name (str): The name of the image file.
+
+    Returns:
+    str: The complete file path to the specific image.
+    """
+    assert camera.lower() in CAMERA_OPTIONS, f"Invalid camera option: {camera}. Available options are: {CAMERA_OPTIONS}"
+    camera = camera.lower()
+    flight_date = _format_date_string(flight_date)
+    file_name = file_name.lower()
+
+    return f"{mission_dir}/{flight_date}/results/{camera}/{file_name}"
+
+
 def drone_flight_orthomosaic_path(mission_dir: str, flight_date: str, method: str, ortho_date: str, camera: str,
                                   image_name: str) -> str:
     """
@@ -578,6 +597,25 @@ def drone_flight_plot_image_path(mission_dir: str, flight_date: str, datetime: s
     image_name = image_name.lower()
 
     return f"{mission_dir}/{flight_date}/plot_image/{datetime}/{camera}/{plot_id}/f{image_name}"
+
+
+def drone_flight_plot_image_dir(mission_dir: str, flight_date: str, datetime: str, camera: str, plot_id: str) -> str:
+    """
+    Generates the file path for a drone flight plot image based on the specified directory,
+    date-time, plot identifier, and image name.
+
+    Args:
+        ortho_dir: The base directory where the plot images are stored.
+        datetime: The datetime when the images were cropped.
+        plot_id: A unique identifier for the plot.
+
+    Returns:
+        The full file path for the specified drone flight plot image as a string.
+    """
+    plot_id = plot_id.lower()
+    datetime = _format_datetime_string(datetime)
+
+    return f"{mission_dir}/{flight_date}/plot_image/{datetime}/{camera}/{plot_id}"
 
 
 def drone_pipeline_outputs(mission_dir: str, flight_date) -> str:

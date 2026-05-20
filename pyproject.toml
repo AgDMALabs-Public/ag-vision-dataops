@@ -40,6 +40,7 @@ dependencies = [
     "fastapi>=0.115.14",
     "protobuf>=6.33.2",
     "pyserial>=3.5",
+    "openpyxl>=3.1.5",
 ]
 
 
