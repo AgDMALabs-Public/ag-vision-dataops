@@ -108,7 +108,7 @@ class HiphenData:
     margin before expiration.
     """
 
-    def __init__(self, token_mgr: TokenManager, year: int, country: str, crop: str, season: str,
+    def __init__(self, token_mgr: TokenManager, year: int=None, country: str=None, crop: str=None, season: str=None,
                  flight_date: str = None, site_name: str = None, field_name: str = None,
                  location_name: str = None, project_dir: str = None, trial_name: str = None,
                  mission_name: str = None, camera: str = None):
@@ -139,6 +139,7 @@ class HiphenData:
         self.mission_name = mission_name
         self.camera = camera
         self.mission_dir = None
+        self.data_summary = None
 
     def set_crop_season(self):
         self.crop_season = pth.season_code(year=self.year,
@@ -336,7 +337,33 @@ class HiphenData:
         os.makedirs(dir_name, exist_ok=True)
 
         download_orthoimage(images=self.ortho_file,
-                            dest_path=dst_path)
+                            dest_path=Path(dst_path))
+
+    def generate_contract_site_mission_table(self):
+        df_list = []
+        for c_idx, contract in enumerate(self.contracts['data']):
+            self.set_contract_id(index=c_idx)
+            self.list_sites()
+            for s_idx, site in enumerate(self.sites['data']):
+                self.set_site_id(index=s_idx)
+                self.get_site_info()
+                print(self.site_info)
+                df = pd.DataFrame({'flight_date': self.site_info['missions']})
+                df['country'] = self.site_info["country"]
+                df['crop'] = self.site_info["crop"]
+                df['location'] = self.site_info['displayName']
+                df['contract'] = str(contract['id'])
+                df['contract_idx'] = c_idx
+                df['site_idx'] = s_idx
+                df['site'] = str(site['id'])
+                df_list.append(df)
+
+        out_df = pd.concat(df_list)
+        out_df.reset_index(drop=True)
+
+        self.data_summary = out_df
+
+
 
 
 
