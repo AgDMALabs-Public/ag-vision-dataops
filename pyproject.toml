@@ -8,7 +8,7 @@ name = "ag-vision"
 version = "1.1.4"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11, <3.13"
+requires-python = ">=3.10, <3.13"
 dependencies = [
     "boto3",
     "databricks>=0.2",
