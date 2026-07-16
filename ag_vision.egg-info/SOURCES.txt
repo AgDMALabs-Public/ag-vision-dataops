@@ -10,6 +10,7 @@ ag_vision.egg-info/requires.txt
 ag_vision.egg-info/top_level.txt
 ag_vision/annotation/annotation.py
 ag_vision/annotation/ingest.py
+ag_vision/api/cloverfield.py
 ag_vision/constants/__init__.py
 ag_vision/constants/paths.py
 ag_vision/core/__init__.py
@@ -31,6 +32,7 @@ ag_vision/drone/__init__.py
 ag_vision/drone/image.py
 ag_vision/drone/ingest.py
 ag_vision/drone/utils.py
+ag_vision/external_connections/hiphen/utils.py
 ag_vision/mobile/__init__.py
 ag_vision/mobile/image.py
 ag_vision/mobile/ingest.py
