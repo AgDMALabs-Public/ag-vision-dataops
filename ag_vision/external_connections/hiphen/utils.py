@@ -10,8 +10,7 @@ from urllib.parse import urlparse, parse_qs
 from datetime import datetime as dt
 from uuid import uuid4
 from open_aglabs.image.models import AgImageModel
-
-from sqlalchemy import desc
+import glob
 
 from ag_vision.constants import paths as pth
 import pandas as pd
@@ -108,7 +107,8 @@ class HiphenData:
     margin before expiration.
     """
 
-    def __init__(self, token_mgr: TokenManager, year: int=None, country: str=None, crop: str=None, season: str=None,
+    def __init__(self, token_mgr: TokenManager, year: int = None, country: str = None, crop: str = None,
+                 season: str = None,
                  flight_date: str = None, site_name: str = None, field_name: str = None,
                  location_name: str = None, project_dir: str = None, trial_name: str = None,
                  mission_name: str = None, camera: str = None):
@@ -317,7 +317,6 @@ class HiphenData:
                 with open(metadata_path, "w", encoding="utf-8") as f:
                     f.write(validated_json)
 
-
     def download_ortho_images(self):
         assert self.flight_date is not None, "Flight date needs to be set"
         assert self.camera is not None, "The camera needs to be set"
@@ -365,12 +364,36 @@ class HiphenData:
 
         self.data_summary = out_df
 
+    def add_plot_dir_to_summary_table(self, volume):
+        assert self.data_summary is not None
+        for idx, row in self.data_summary.iterrows():
+            self.data_summary.loc[idx, 'plot_dir'] = os.path.join(volume,
+                                                                  row['contract'],
+                                                                  '*',
+                                                                  '*',
+                                                                  '*',
+                                                                  row['location'],
+                                                                  row['location'],
+                                                                  'drone',
+                                                                  '*',
+                                                                  'date',
+                                                                  'plot_image',
+                                                                  '*',
+                                                                  'rgb',
+                                                                  '*',
+                                                                  '*')
 
-
-
+    def count_plot_images(self):
+        assert self.data_summary is not None
+        assert 'plot_dir' in self.data_summary.columns
+        for idx, row in self.data_summary.iterrows():
+            count = glob.glob(row['plot_dir'])
+            self.data_summary.loc[idx, 'plot_img_count'] = len(count)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+
+
 # HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
