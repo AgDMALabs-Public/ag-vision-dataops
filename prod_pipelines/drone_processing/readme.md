@@ -157,6 +157,52 @@ This is a single-task job that runs the PhenoI processing pipeline on a custom c
 
 ---
 
+## Job 5: `LOCATION_BOUNDARY_CROP`
+
+This job crops the field boundary based on location and conditionally triggers pending location clip generation. It has 6 tasks, all running on Serverless compute, including a conditional branch.
+
+### Pipeline flow
+
+```
+1_Flight_table → 2_Location_table_gen → 2_5_Update_ortho_table → 3_orquestator → check_pending_location_clips → (True) → pending_location_clips_gen
+```
+
+## Steps to create this job in Databricks
+
+1. Go to **Jobs & Pipelines** and click **Create Job**. Name it `LOCATION_BOUNDARY_CROP`.
+
+2. **Add Task 1 — `1_Flight_table`**
+   - Source: `drone_flight_table_generation` notebook
+   - Compute: **Serverless**
+   
+3. **Add Task 2 — `2_Location_table_gen`**
+   - Source: `drone_location_clipped_table` notebook
+   - Compute: **Serverless**
+   - Depends on: `1_Flight_table`
+   - Inside this notebook, you need to update the `catalog` name (the space where the table will be created), the `schema` name. Every line marked with `#change` must be updated to match your own environment.
+4. **Add Task 3 — `2_5_Update_ortho_table`**
+   - Source: `drone_orthomosaic_table_generation` notebook
+   - Compute: **Serverless**
+   - Depends on: `2_location_table_gen`
+   
+5. **Add Task 4 — `3_orquestator`**
+   - Source: `location_clip_orchestator` notebook
+   - Compute: **Serverless**
+   - Depends on: `2_5_Update_ortho_table`
+   - Inside this notebook, you need to update the `catalog` name (the space where the table will be created), the `schema` name. Every line marked with `#change` must be updated to match your own environment.
+
+6. **Add Task 5 — `check_pending_location_clips`** (Condition task)
+   - Type: **If/else condition**
+   - Condition: `{{proceed}} == "true"` (this references a task value/parameter named `proceed` set earlier in the pipeline)
+   - Depends on: `3_orquestator`
+
+7. **Add Task 6 — `pending_location_clips_gen`**
+   - Source: `location_clipping` notebook (path: `Shared/pipeline_drones/Plot_clipping`)
+   - Compute: **Serverless**
+   - Depends on: `check_pending_location_clips` → **True** branch only
+   
+8. Save the job and run it once manually to confirm the conditional branch behaves as expected.
+
 ## Summary of all jobs
 
 | Job | Tasks | Compute type(s) |
@@ -165,3 +211,4 @@ This is a single-task job that runs the PhenoI processing pipeline on a custom c
 | `PIPELINE_ORTHOMOSAIC` | 2 | Agisoft Metashape |
 | `PLOT_CLIPS_GENERATION` | 6 (with conditional branch) | Serverless |
 | `PHENO_I` | 1 | Pheno-I Custom Compute |
+| `LOCATION_BOUNDARY_CROP` | 6 (with conditional branch) | Serverless |
