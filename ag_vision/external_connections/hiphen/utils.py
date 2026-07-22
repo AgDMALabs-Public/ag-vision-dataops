@@ -366,6 +366,7 @@ class HiphenData:
 
     def add_plot_dir_to_summary_table(self, volume):
         assert self.data_summary is not None
+        self.data_summary = self.data_summary.reset_index(drop=True)
         for idx, row in self.data_summary.iterrows():
             self.data_summary.loc[idx, 'plot_dir'] = os.path.join(volume,
                                                                   row['contract'],
@@ -375,14 +376,14 @@ class HiphenData:
                                                                   row['location'],
                                                                   'drone',
                                                                   '*',
-                                                                  row['date'],
+                                                                  row['flight_date'],
                                                                   'plot_image',
                                                                   '*',
                                                                   'rgb',
                                                                   '*',
                                                                   '*.webp')
 
-            self.data_summary.loc[idx, 'plot_dir'] =  self.data_summary.loc[idx, 'plot_dir'].apply(lambda x: x.lower())
+            self.data_summary['plot_dir'] =  self.data_summary['plot_dir'].apply(lambda x: x.lower())
 
     def count_plot_images(self):
         assert self.data_summary is not None
