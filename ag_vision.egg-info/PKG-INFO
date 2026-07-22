@@ -2,7 +2,7 @@ Metadata-Version: 2.4
 Name: ag-vision
 Version: 1.1.4
 Summary: Add your description here
-Requires-Python: <3.13,>=3.10
+Requires-Python: <3.13,>=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: boto3
