@@ -369,14 +369,14 @@ class HiphenData:
         self.data_summary = self.data_summary.reset_index(drop=True)
         for idx, row in self.data_summary.iterrows():
             self.data_summary.loc[idx, 'plot_dir'] = os.path.join(volume,
-                                                                  row['contract'],
+                                                                  row['contract'].lower(),
                                                                   '*',
                                                                   '*',
-                                                                  row['location'],
-                                                                  row['location'],
+                                                                  row['location'].lower(),
+                                                                  row['location'].lower(),
                                                                   'drone',
                                                                   '*',
-                                                                  row['flight_date'],
+                                                                  row['flight_date'].lower(),
                                                                   'plot_image',
                                                                   '*',
                                                                   'rgb',
@@ -384,7 +384,6 @@ class HiphenData:
                                                                   '*.webp')
 
         self.data_summary['plot_dir'] = self.data_summary['plot_dir'].astype(str)
-        self.data_summary['plot_dir'] =  self.data_summary['plot_dir'].apply(lambda x: x.lower())
 
     def count_plot_images(self):
         assert self.data_summary is not None
