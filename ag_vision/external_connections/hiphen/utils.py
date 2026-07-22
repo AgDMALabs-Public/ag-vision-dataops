@@ -371,17 +371,18 @@ class HiphenData:
                                                                   row['contract'],
                                                                   '*',
                                                                   '*',
-                                                                  '*',
                                                                   row['location'],
                                                                   row['location'],
                                                                   'drone',
                                                                   '*',
-                                                                  'date',
+                                                                  row['date'],
                                                                   'plot_image',
                                                                   '*',
                                                                   'rgb',
                                                                   '*',
-                                                                  '*')
+                                                                  '*.webp')
+
+            self.data_summary.loc[idx, 'plot_dir'] =  self.data_summary.loc[idx, 'plot_dir'].apply(lambda x: x.lower())
 
     def count_plot_images(self):
         assert self.data_summary is not None
