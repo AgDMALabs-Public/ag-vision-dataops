@@ -383,7 +383,8 @@ class HiphenData:
                                                                   '*',
                                                                   '*.webp')
 
-            self.data_summary['plot_dir'] =  self.data_summary['plot_dir'].apply(lambda x: x.lower())
+        self.data_summary['plot_dir'] = self.data_summary['plot_dir'].astype(str)
+        self.data_summary['plot_dir'] =  self.data_summary['plot_dir'].apply(lambda x: x.lower())
 
     def count_plot_images(self):
         assert self.data_summary is not None
