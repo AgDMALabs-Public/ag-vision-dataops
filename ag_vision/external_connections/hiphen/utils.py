@@ -352,10 +352,12 @@ class HiphenData:
                 df['country'] = self.site_info["country"]
                 df['crop'] = self.site_info["crop"]
                 df['location'] = self.site_info['displayName']
-                df['contract'] = str(contract['id'])
+                df['contract_id'] = str(contract['id'])
                 df['contract_idx'] = c_idx
+                df['contract'] = str(contract['name'])
                 df['site_idx'] = s_idx
-                df['site'] = str(site['id'])
+                df['site_id'] = str(site['id'])
+                df['site'] = str(site['name'])
                 df_list.append(df)
 
         out_df = pd.concat(df_list)
