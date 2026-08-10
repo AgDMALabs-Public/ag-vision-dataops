@@ -105,7 +105,7 @@ class BlurInference:
             'id': 'dwilli37/ag_image_blur_detection'
         }
 
-
+# This is for a model prediction
 class AgImageType:
     def __init__(self, device=None, cache_dir=None):
         """

@@ -30,3 +30,5 @@ protobuf>=6.33.2
 pyserial>=3.5
 openpyxl>=3.1.5
 dotenv>=0.9.9
+pymediainfo>=7.0.1
+imageio-ffmpeg>=0.6.0

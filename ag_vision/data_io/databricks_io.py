@@ -17,14 +17,13 @@ def upload_json_to_databricks(w: WorkspaceClient,
                               data: dict,
                               file_name: str,
                               overwrite: bool = False):
-
     json_content = json.dumps(data, indent=4).encode('utf-8')
 
     with w.dbfs.open(file_name, write=True, overwrite=False) as f:
         f.write(json_content)
 
 
-def upload_file_with_progress(w, local_file_path, volume_path, chunk_size=1024*1024):
+def upload_file_with_progress(w, local_file_path, volume_path, chunk_size=1024 * 1024):
     """
     Uploads a file to Databricks Volumes with a progress bar.
     """
@@ -134,6 +133,71 @@ def save_img_to_databricks(img: np.ndarray, file_name: str):
         return success
     except Exception as e:
         print(f"Failed to save image from databricks: {e}")
+
+
+def read_video_from_databricks(file_name: str) -> cv2.VideoCapture | None:
+    """
+    Reads a video file from a Databricks Volume path and returns a cv2.VideoCapture object.
+
+    Args:
+        file_name (str): The full path to the video file on the Databricks Volume.
+
+    Returns:
+        cv2.VideoCapture | None: An opened VideoCapture object, or None if the file
+        could not be found or opened.
+    """
+    try:
+        if not os.path.exists(file_name):
+            print(f"File not found: {file_name}")
+            return None
+
+        cap = cv2.VideoCapture(file_name)
+
+        if not cap.isOpened():
+            print(f"Failed to open video: {file_name}")
+            return None
+
+        return cap
+    except Exception as e:
+        print(f"Failed to read video from databricks: {e}")
+        return None
+
+
+def save_video_to_databricks(video: cv2.VideoCapture, file_name: str, fourcc: str = 'mp4v', fps: float = None) -> bool:
+    """
+    Saves a cv2.VideoCapture object to a Databricks Volume path frame-by-frame.
+
+    Args:
+        video (cv2.VideoCapture): An opened VideoCapture object to save.
+        file_name (str): The destination path on the Databricks Volume.
+        fourcc (str): The 4-character codec code. Defaults to 'mp4v'.
+
+    Returns:
+        bool: True if saved successfully, False otherwise.
+    """
+    try:
+        source_fps = video.get(cv2.CAP_PROP_FPS)
+        width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out_fps = fps or source_fps
+
+        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        writer = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*fourcc), out_fps, (width, height))
+
+        while True:
+            ret, frame = video.read()
+            if not ret:
+                break
+            writer.write(frame)
+
+        writer.release()
+        return True
+    except Exception as e:
+        print(f"Failed to save video to databricks: {e}")
+        return False
 
 
 def read_json_from_databricks(file_name: str) -> dict:
