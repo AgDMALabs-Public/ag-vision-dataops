@@ -18,6 +18,7 @@ ag_vision/core/image.py
 ag_vision/core/img_qc.py
 ag_vision/core/ingest.py
 ag_vision/core/ingest_qc.py
+ag_vision/core/video.py
 ag_vision/data_io/__init__.py
 ag_vision/data_io/annotation_io.py
 ag_vision/data_io/aws_io.py
