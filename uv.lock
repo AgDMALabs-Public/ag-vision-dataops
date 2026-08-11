@@ -2082,7 +2082,7 @@ wheels = [
 [[package]]
 name = "open-aglabs"
 version = "0.1.0"
-source = { git = "https://github.com/AgDMALabs-Public/AgDMALabs-open.git#fbeeff32297f2acf763b526204bbeac0cb09f607" }
+source = { git = "https://github.com/AgDMALabs-Public/AgDMALabs-open.git#7baee1f8dba591d72c4e4ae3563837294c0f49cc" }
 dependencies = [
     { name = "geopandas" },
     { name = "jupyter" },

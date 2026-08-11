@@ -10,6 +10,7 @@ from ag_vision.data_io import local_io, databricks_io
 from ag_vision.constants import paths
 import logging
 from uuid import uuid4
+from ag_vision.core.image import  AgImage
 
 logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 import imageio_ffmpeg
@@ -56,7 +57,7 @@ class AgVideo:
             cap = local_io.read_video(self.video_key)
 
         elif self.platform == "db":
-            assert self.cloud_bucket is not None, "cloud_bucket must be set for Databricks platform."
+            assert self.video_key is not None, "Video Key  must be set for Databricks platform."
 
             cap = databricks_io.read_video_from_databricks(self.video_key)
 
@@ -233,14 +234,15 @@ class AgVideo:
                 filename = os.path.join(output_dir,
                                         f"{str(uuid4())}.{resolution}")
 
-                # Save the frame using cv2.imwrite
-                success = cv2.imwrite(filename, frame)
+                a_img = AgImage(img_key=filename,
+                                image=frame,
+                                platform=self.platform)
+                a_img.generate_metadata_key_from_img_key()
+                a_img.initialize_metadata()
+                a_img.metadata.source = self.video_key
+                a_img.save_img()
+                a_img.save_metadata()
 
-                if success:
-                    saved_files.append(filename)
-                    logger.debug(f"Saved frame {count} to {filename}")
-                else:
-                    logger.warning(f"Failed to save frame {count}.")
 
         logger.info(f"Finished saving frames. Total saved files: {len(saved_files)}")
         return len(saved_files)
@@ -267,11 +269,22 @@ class AgVideo:
         else:
             logger.warning(f'The cloud platform need to be local or db')
 
+    def validate_metadata(self):
+        try:
+            validated_metadata = AgVideoModel(**self.metadata.dict())
+            logger.info("Metadata successfully validated using Pydantic model.")
+            return validated_metadata
+        except Exception as e:
+            raise RuntimeError(
+                f"Metadata failed Pydantic validation check during integrity verification: {type(e).__name__}: {e}")
+
     def save_metadata(self):
         assert self.metadata is not None, "Metadata is none, will not save."
         assert self.metadata_key is not None, "Metadata key needs to be set."
 
         if self.metadata is not None and self.metadata_key is not None:
+            self.validate_metadata()
+
             if self.platform == 'db':
                 try:
                     databricks_io.save_json_to_databricks(data=self.metadata.model_dump(),
@@ -302,7 +315,9 @@ class AgVideo:
                 "camera_properties": {},
                 "location_properties": {},
                 "acquisition_properties": {},
-                "image_quality": {}
+                "video_quality": {},
+                "collection_properties": {},
+                "agronomic_properties": {}
             }
             self.metadata = AgVideoModel(**metadata_dict)
         else:
