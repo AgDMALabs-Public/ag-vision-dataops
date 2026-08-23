@@ -9,6 +9,7 @@ import tifffile as tif
 import shutil
 import cv2
 from databricks.sdk import WorkspaceClient
+from ag_vision.data_io.local_io import read_audio, save_audio, read_text_data, save_text_data
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,31 @@ def upload_json_to_databricks(w: WorkspaceClient,
                               overwrite: bool = False):
     json_content = json.dumps(data, indent=4).encode('utf-8')
 
-    with w.dbfs.open(file_name, write=True, overwrite=False) as f:
+    with w.dbfs.open(file_name, write=True, overwrite=overwrite) as f:
         f.write(json_content)
+
+
+def upload_text_to_databricks(w: WorkspaceClient,
+                              data: str,
+                              file_name: str,
+                              overwrite: bool = False):
+    text_content = data.encode('utf-8')
+
+    with w.dbfs.open(file_name, write=True, overwrite=overwrite) as f:
+        f.write(text_content)
+
+
+def upload_wav_to_databricks(w: WorkspaceClient,
+                             local_file_path: str,
+                             dbfs_file_name: str,
+                             overwrite: bool = False):
+
+    with open(local_file_path, 'rb') as local_file:
+        wav_content = local_file.read()
+
+    # Write the binary content directly to DBFS
+    with w.dbfs.open(dbfs_file_name, write=True, overwrite=overwrite) as f:
+        f.write(wav_content)
 
 
 def upload_file_with_progress(w, local_file_path, volume_path, chunk_size=1024 * 1024):
@@ -183,7 +207,6 @@ def save_video_to_databricks(video: cv2.VideoCapture, file_name: str, fourcc: st
 
         video.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         writer = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*fourcc), out_fps, (width, height))
 
@@ -244,3 +267,23 @@ def save_csv_to_databricks(data: pd.DataFrame, file_name: str):
             shutil.move(temp_f_path, file_name)
     except Exception as e:
         print(f"Failed to save json from databricks: {e}")
+
+
+def read_audio_from_databricks(file_name):
+    return read_audio(file_name)
+
+
+def save_audio_to_databricks(file_name: str, audio_data, sample_rate: float):
+    return save_audio(file_path=file_name,
+                      audio_data=audio_data,
+                      sample_rate=sample_rate)
+
+
+def read_text_from_databricks(file_name: str, encoding: str = 'utf-8') -> str:
+    return read_text_data(file_name,
+                          encoding=encoding)
+
+
+def save_text_to_databricks(data: str, file_name: str):
+    save_text_data(file_path=file_name,
+                   data=data)
