@@ -354,7 +354,7 @@ class HiphenData:
                     df['year'] = min_date.year
                     df['month'] = min_date.month
                     df['country'] = self.site_info["country"]
-                    df['crop'] = self.site_info["crop"]
+                    df['crop'] = self.site_info["crop"].replace(' ', '_')
                     df['location'] = self.site_info['displayName']
                     df['contract_id'] = str(contract['id'])
                     df['contract_idx'] = c_idx
