@@ -361,10 +361,17 @@ class HiphenData:
                 df['site_idx'] = s_idx
                 df['site_id'] = str(site['id'])
                 df['site'] = str(site['name'])
-                df['season'] = pth.season_code(year=df['year'].min(),
-                                               country=df['country'][0],
-                                               crop=df['crop'][0],
-                                               time_of_year=df['month'][0])
+
+                country_val = df['country'].iloc[0]
+                crop_val = df['crop'].iloc[0]
+
+                if pd.notna(country_val) and pd.notna(crop_val):
+                    df['season'] = pth.season_code(
+                        year=df['year'].min(),
+                        country=str(country_val),
+                        crop=str(crop_val),
+                        time_of_year=df['month'].iloc[0]
+                    )
                 df_list.append(df)
 
         out_df = pd.concat(df_list)
