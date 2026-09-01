@@ -367,7 +367,7 @@ class HiphenData:
                     crop_val = df['crop'].iloc[0]
 
                     if pd.notna(country_val) and pd.notna(crop_val):
-                        df['crop'] = df['crop'].apply(lambda x: x.replace(' ', '_'))
+                        crop_val = crop_val.replace(' ', '_')
                         df['season'] = pth.season_code(
                             year=df['year'].min(),
                             country=str(country_val),
