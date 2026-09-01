@@ -386,7 +386,7 @@ class HiphenData:
             self.data_summary.loc[idx, 'plot_dir'] = os.path.join(volume,
                                                                   row['contract'].lower(),
                                                                   '*',
-                                                                  '*',
+                                                                  row['season'].lower(),
                                                                   row['location'].lower(),
                                                                   row['location'].lower(),
                                                                   'drone',
