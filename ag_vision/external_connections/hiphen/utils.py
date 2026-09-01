@@ -348,6 +348,10 @@ class HiphenData:
                 self.get_site_info()
                 print(self.site_info)
                 df = pd.DataFrame({'flight_date': self.site_info['missions']})
+                first_flight_date = pd.to_datetime(df['flight_date'])
+                min_date = first_flight_date.min()
+                df['year'] = min_date.year
+                df['month'] = min_date.month
                 df['country'] = self.site_info["country"]
                 df['crop'] = self.site_info["crop"]
                 df['location'] = self.site_info['displayName']
@@ -357,6 +361,10 @@ class HiphenData:
                 df['site_idx'] = s_idx
                 df['site_id'] = str(site['id'])
                 df['site'] = str(site['name'])
+                df['season'] = pth.season_code(year=df['year'].min(),
+                                               country=df['country'][0],
+                                               crop=df['crop'][0],
+                                               time_of_year=df['month'][0])
                 df_list.append(df)
 
         out_df = pd.concat(df_list)
