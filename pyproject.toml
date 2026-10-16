@@ -22,6 +22,7 @@ dependencies = [
     "pytest>=8.4.2",
     "roboflow>=1.2.6",
     "setuptools>=80.9.0",
+    "sqlalchemy>=1.4,<2.1",
     "tiffile>=2018.10.18",
     "tqdm>=4.67.1",
     "open-aglabs @ git+https://github.com/AgDMALabs-Public/AgDMALabs-open.git",
