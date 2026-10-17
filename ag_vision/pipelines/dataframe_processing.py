@@ -3,6 +3,9 @@ import os
 
 from typing import Iterator
 from ag_vision.pipelines import image_processing as ip
+from ag_vision.pipelines import annotation_processing as ap
+
+
 
 
 def keep_records_with_missing_metadata_files(
@@ -20,7 +23,7 @@ def keep_records_with_missing_metadata_files(
 
 
 
-def process_batch(
+def process_images_batch(
     iterator: Iterator[pd.DataFrame],
     sample_df: pd.DataFrame
     )-> Iterator[pd.DataFrame]:
@@ -39,3 +42,22 @@ def process_batch(
             yield ip.generate_images_table(img_list=items,
                                            platform='db',
                                            project_index=6)
+            
+
+def process_annotations_batch(
+    iterator: Iterator[pd.DataFrame],
+    )-> Iterator[pd.DataFrame]:
+    """
+    Processes an iterator of pandas DataFrames (chunks) and yields processed results.
+    """
+    for pdf in iterator:
+        # pdf is a pandas DataFrame chunk
+        items = pdf["item"].tolist()
+
+        if not items:
+            # Yield an empty DataFrame with the correct columns if the chunk is empty
+            yield ap.generate_annotations_table(anno_list=[])
+        else:
+            # Process the items and yield the resulting DataFrame
+            yield ap.generate_annotations_table(anno_list=items)
+
