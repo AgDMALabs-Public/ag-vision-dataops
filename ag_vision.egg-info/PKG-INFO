@@ -1,4 +1,4 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: ag-vision
 Version: 1.1.4
 Summary: Add your description here
@@ -40,6 +40,7 @@ Requires-Dist: openpyxl>=3.1.5
 Requires-Dist: dotenv>=0.9.9
 Requires-Dist: pymediainfo>=7.0.1
 Requires-Dist: imageio-ffmpeg>=0.6.0
+Dynamic: license-file
 
 # ag_vision
 * The main objectives of this package is to help with data ops on data used in vision ML projects in Ag.
