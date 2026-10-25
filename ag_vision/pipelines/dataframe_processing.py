@@ -16,6 +16,13 @@ def keep_records_with_missing_metadata_files(
     """
     Adds a boolean column 'metatada_file_exists' to df, then returns
     only the rows where the file does NOT already exist.
+
+    Args:
+      df: pandas DataFrame of the original images information and their metadata
+      path_col: name of the column containing the metadata file paths
+
+    Returns:
+      pandas DataFrame with the boolean column added
     """
     df = df.copy()
     df["metatada_file_exists"] = df[path_col].apply(os.path.exists)
@@ -29,6 +36,10 @@ def process_images_batch(
     )-> Iterator[pd.DataFrame]:
     """
     Processes an iterator of pandas DataFrames (chunks) and yields processed results.
+
+    Args:
+      iterator: iterator of pandas DataFrames (chunks) in the case of images related entries
+      sample_df: pandas DataFrame of the original images information and their metadata
     """
     for pdf in iterator:
         # pdf is a pandas DataFrame chunk
@@ -49,6 +60,9 @@ def process_annotations_batch(
     )-> Iterator[pd.DataFrame]:
     """
     Processes an iterator of pandas DataFrames (chunks) and yields processed results.
+
+    Args:
+      iterator: iterator of pandas DataFrames (chunks) in the case of annotations related entries
     """
     for pdf in iterator:
         # pdf is a pandas DataFrame chunk

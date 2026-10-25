@@ -7,8 +7,15 @@ def generate_annotations_table(anno_list: list, project_index: int = 8) -> pd.Da
     Build the annotations table from a list of annotation JSON paths.
 
     Expected path layout (project_index points at <project>):
-    /Volumes/<catalog>/production/data/<category>/annotations/object_detection/<project>/v1/<download_date>/<anno_id>.json
-       0        1          2         3       4          5             6            7        8        9            10
+    ''/Volumes/<catalog>/production/data/<category>/annotations/object_detection/<project>/v1/<download_date>/<anno_id>.json
+    0  1       2         3          4    5          6           7                8         9   10             11
+    
+    Args:
+        anno_list (list): List of annotation JSON file paths.
+        project_index (int, optional): Index of the project name in the path (when using the .split('/') function). Defaults to 8.
+
+    Returns:
+        pd.DataFrame: Annotations table.
     """
     anno_list = list(anno_list)
     anno_df = pd.DataFrame({'annotation_path': anno_list})
