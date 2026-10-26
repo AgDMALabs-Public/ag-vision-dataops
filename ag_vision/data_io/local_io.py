@@ -2,9 +2,11 @@ import logging
 import cv2
 import json
 import os
-
+import librosa
+import soundfile as sf
 
 logger = logging.getLogger(__name__)
+
 
 def read_image(image_path: str):
     """
@@ -136,6 +138,7 @@ def save_json(data: dict, file_path: str) -> bool:
         logger.error(f"An unexpected error occurred: {e}")
         return False
 
+
 def read_json(file_path: str) -> dict:
     """
     Reads data from a local JSON file.
@@ -185,4 +188,89 @@ def save_json(data: dict, file_path: str) -> bool:
         return False
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
+        return False
+
+
+def read_audio(file_path):
+    """
+    Reads audio file.
+
+    Args:
+        file_path: Path to the audio file.
+
+    Returns:
+        y: Audio signal.
+        sr: Sampling rate.
+    """
+    try:
+        y, sr = librosa.load(file_path)
+    except Exception as e:
+        y = None
+        sr = None
+        print(f'Failed to read audio file {e}')
+
+    return y, sr
+
+
+def save_audio(file_path, audio_data, sample_rate):
+    """
+    Saves audio data to a file.
+
+    Args:
+        file_path: The path to the file where the audio data will be saved.
+        audio_data: The audio data to be saved.
+        sample_rate: The sampling rate of the audio data.
+
+    """
+    try:
+        sf.write(file_path, audio_data, sample_rate)
+    except Exception as e:
+        print(f'Failed to read audio file {e}')
+
+
+def read_text_data(file_path: str, encoding:str='utf-8') -> str:
+    """
+    Reads the content of a text file.
+
+    Args:
+        file_path: The path to the .txt file.
+
+    Returns:
+        The content of the file as a string, or an empty string if an error occurs.
+    """
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.error(f"The file at {file_path} was not found.")
+        return ""
+    except Exception as e:
+        logger.error(f"An error occurred while reading the file at {file_path}: {e}")
+        return ""
+
+
+def save_text_data(file_path: str, data: any) -> bool:
+    """
+    Saves data to a .txt file.
+
+    Args:
+        file_path: The path where the text file will be saved.
+        data: The content to save (will be converted to a string).
+
+    Returns:
+        True if the file is saved successfully, otherwise False.
+    """
+    try:
+        # Ensure the destination directory exists
+        directory = os.path.dirname(file_path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(str(data))
+
+        logger.info(f"Text data successfully saved to {file_path}")
+        return True
+    except Exception as e:
+        logger.error(f"An error occurred while saving the file to {file_path}: {e}")
         return False

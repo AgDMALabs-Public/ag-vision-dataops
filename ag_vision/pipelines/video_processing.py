@@ -52,7 +52,7 @@ def process_single_video(image_id, file_path, platform: str):
         }
 
 
-def generate_video_table(img_list: list, platform: str, project_index: int = 6) -> pd.DataFrame:
+def generate_video_table(img_list: list, platform: str, project_index: int = 5) -> pd.DataFrame:
     """
 
     """
@@ -62,12 +62,13 @@ def generate_video_table(img_list: list, platform: str, project_index: int = 6) 
 
     img_df['image_id'] = [os.path.basename(x).split('.')[0] for x in img_list]
     img_df['project'] = [x.split('/')[project_index] for x in img_list]
-    img_df['trial'] = [x.split('/')[project_index + 1] for x in img_list]
-    img_df['season'] = [x.split('/')[project_index + 2] for x in img_list]
-    img_df['field'] = [x.split('/')[project_index + 3] for x in img_list]
-    img_df['location'] = [x.split('/')[project_index + 4] for x in img_list]
-    img_df['protocol'] = [x.split('/')[project_index + 7] for x in img_list]
-    img_df['upload_date'] = [x.split('/')[project_index + 8] for x in img_list]
+    img_df['site'] = [x.split('/')[project_index + 1] for x in img_list]
+    img_df['trial'] = [x.split('/')[project_index + 2] for x in img_list]
+    img_df['season'] = [x.split('/')[project_index + 3] for x in img_list]
+    img_df['field'] = [x.split('/')[project_index + 4] for x in img_list]
+    img_df['location'] = [x.split('/')[project_index + 5] for x in img_list]
+    img_df['protocol'] = [x.split('/')[project_index + 8] for x in img_list]
+    img_df['upload_date'] = [x.split('/')[project_index + 9] for x in img_list]
 
     img_df['plot_id'] = [
         x.split('/')[project_index + 9]
