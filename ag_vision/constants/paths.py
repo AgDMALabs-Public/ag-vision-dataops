@@ -1,7 +1,14 @@
-import logging
-import pandas as pd
-from open_aglabs.core.constants import CROP_LIST, YEAR_LIST, COUNTRY_CODES, TIME_OF_YEAR_LIST, ANNOTATION_TYPE_LIST
 import os
+import html
+import pandas as pd
+import logging
+
+from IPython.display import HTML, display
+from pyspark.sql import SparkSession
+from urllib.parse import quote
+from open_aglabs.core.constants import CROP_LIST, YEAR_LIST, COUNTRY_CODES, TIME_OF_YEAR_LIST, ANNOTATION_TYPE_LIST
+
+
 
 logger = logging.getLogger(__name__)  # Use __name__ to get the module's name
 
@@ -812,3 +819,43 @@ def rover_pipeline_outputs_dir(mission_dir: str, scan_date) -> str:
     """
     scan_date = _format_date_string(scan_date)
     return f"{mission_dir}/{scan_date}/outputs"
+
+
+# ----------------------------------------------------------Databricks URL------------------------------------------------------#
+def show_volume_folder_link(path: str, 
+                            url_name: str = "Open folder", 
+                            prefix: str = "",
+                            final_index: bool = False, 
+                            host: str | None = None) -> None:
+    """
+    Display a clickable link that opens a folder inside a Unity Catalog Volume in Catalog Explorer.
+
+    `path` is a Volume path such as /Volumes/<catalog>/<schema>/<volume>/<folders...>.
+    `url_name` is the text shown for the link.
+    `final_index` whether to consider the last folder part or an earlier suboflder.
+    """
+    if not path.startswith("/Volumes/"):
+        raise ValueError(f"Expected a path starting with /Volumes/, got: {path}")
+
+    if host is None:
+        host = SparkSession.getActiveSession().conf.get("spark.databricks.workspaceUrl")
+
+    parts = path.split("/")
+    catalog, schema, volume = parts[2:5]
+    workspace_id = catalog.split("_")[-1]
+
+    folder = "/".join(parts[1:-2])
+    if final_index:
+        folder = "/".join(parts[1:])
+
+    link = (
+        f"https://{host}/explore/data/volumes/{catalog}/{schema}/{volume}"
+        f"?o={workspace_id}&volumePath={quote('/' + folder + '/', safe='')}"
+    )
+
+    display(HTML(
+        '<style>body { margin: 0; padding: 0; }</style>'
+        f'<span style="font-family: monospace; font-size: 13px;">'
+        f'{html.escape(prefix)}<a href="{link}" target="_blank">{html.escape(url_name)}</a>'
+        f'</span>'
+    ))
