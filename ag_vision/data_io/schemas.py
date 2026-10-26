@@ -1,5 +1,12 @@
 import logging
+import json
+
 from pydantic import BaseModel
+from pathlib import Path
+from pyspark.sql.types import StructType
+
+
+SCHEMA_DIR = Path(__file__).parent.parent / "core"
 
 logger = logging.getLogger(__name__)
 
@@ -193,3 +200,18 @@ def generate_nested_schema_from_flat(schema_dict: dict, sep: str = ":") -> dict:
                                                     val=value,
                                                     delimiter=sep)
     return out_dict
+
+
+def create_table_from_schema(spark, table_name: str, schema_file: str):
+    """Create an empty Delta table with the structure described in core/<schema_file>.json."""
+    if spark.catalog.tableExists(table_name):
+        print(f"{table_name} already exists, skipping")
+        return
+
+    with open(SCHEMA_DIR / schema_file) as f:
+        schema = StructType.fromJson(json.load(f))
+
+    (spark.createDataFrame([], schema)
+          .write.format("delta")
+          .saveAsTable(table_name))
+    print(f"Created {table_name}")
