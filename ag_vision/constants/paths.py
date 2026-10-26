@@ -405,14 +405,28 @@ def scouting_note_path(location_path: str, task: str, protocol: str, date: str, 
 
 
 # ---------------------------------------------------Survey Data-------------------------------------------------------#
-def survey_path(location_path: str, task: str, protocol: str, date: str, survey_obj_name: str) -> str:
+def survey_path(location_path: str, task: str, protocol: str, date: str, survey_id: str, f_name: str) -> str:
+    """
+    Creates a survey path string.
+
+    Args:
+        location_path: The location path.
+        task: The task.
+        protocol: The protocol.
+        date: The date.
+        survey_id: The survey ID.
+        f_name: The file name.
+
+    Returns:
+        The survey path string.
+    """
     task = task.lower()
     protocol = protocol.lower()
-    survey_obj_name = survey_obj_name.lower()
+    survey_id = survey_id.lower()
 
     date = _format_date_string(date)
 
-    return f"{location_path}/{task}/survey/{protocol}/{date}/{survey_obj_name}"
+    return f"{location_path}/{task}/survey/{protocol}/{date}/{survey_id}/{f_name}"
 
 
 # ---------------------------------------------------Drones------------------------------------------------------------#
