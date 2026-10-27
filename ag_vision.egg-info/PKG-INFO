@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: ag-vision
 Version: 1.1.4
 Summary: Add your description here
@@ -10,6 +10,8 @@ Requires-Dist: databricks>=0.2
 Requires-Dist: databricks-sdk>=0.57.0
 Requires-Dist: geopandas>=1.1.0
 Requires-Dist: google-cloud-storage>=3.1.1
+Requires-Dist: inference>=1.8.1
+Requires-Dist: inference-models>=0.39.4
 Requires-Dist: jsonschema>=4.25.1
 Requires-Dist: matplotlib>=3.10.3
 Requires-Dist: pandas>=2.0.0
