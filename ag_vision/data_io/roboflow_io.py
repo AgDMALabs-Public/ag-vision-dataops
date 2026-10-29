@@ -1,7 +1,14 @@
 import os
 import shutil
 import json
+import logging
+import tempfile
+import glob
+import re
+import requests
 import pandas as pd
+import time
+
 
 from tqdm import tqdm
 from ag_vision.constants import paths
@@ -9,14 +16,21 @@ from ag_vision.data_io import annotation_io as aio
 from ag_vision.data_io import databricks_io as dbio
 from ag_vision.data_io import local_io as lio
 from ag_vision.annotation import annotation as anno
-import logging
-import tempfile
-import glob
+from roboflow import Roboflow
+from google.cloud import storage
+
+
 
 logger = logging.getLogger(__name__)
 
 SPLIT_LIST = ['train', 'valid', 'test']
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.tiff', '.png', '.webp']
+
+EXPORT_FORMATS = {
+    "object_detection":      "yolov8",      # labels: class cx cy w h
+    "instance_segmentation": "yolov8",  # labels: class x1 y1 x2 y2 ...
+}
+
 
 
 def upload_image_to_roboflow(rf_project, batch_name: str, img_path: str, annotation_path: str = None,
@@ -386,3 +400,156 @@ def download_annotation_batch_from_roboflow(rf_workspace, rf_project_id, project
 
     else:
         raise ValueError(f"Annotation type {annotation_type} is not supported.")
+
+
+
+def create_roboflow_project_restapi(project_name,
+                                    task_type,
+                                    annotation_group,
+                                    api_key,
+                                    workspace_name,
+                                    folder_group=None,
+                                    license="Private",
+                                    timeout=30):
+    """
+    Creates a new project in a Roboflow workspace if it doesn't already exist,
+    using the Roboflow REST API directly (no SDK).
+
+    Args:
+        project_name (str): The name of the project to create.
+        task_type (str): The type of the task, e.g. object_detection,
+            image_classification, instance_segmentation. Underscore or
+            hyphen styles are both accepted.
+        annotation_group (str): The annotation group as defined in
+            Roboflow's projects.
+        api_key (str): A workspace-level Roboflow API key. Folder (billing)
+            keys cannot create projects.
+        workspace_name (str): The workspace URL slug, exactly as it appears
+            in app.roboflow.com/<slug>.
+        folder_group (str, optional): The id of the folder ("group") the new
+            project should be created in. If None, the project is created at
+            the workspace root.
+        license (str): The license type. Defaults to "Private".
+        timeout (int): Per-request timeout in seconds.
+
+    Returns:
+        str: The project id ("workspace/project-slug") if the project was
+            created or already exists.
+        None: On error (details are printed).
+    """
+
+    ROBOFLOW_API_URL = "https://api.roboflow.com"
+
+    # The REST endpoint expects hyphenated project types. This map lets callers
+    # keep passing the underscore style used by the old SDK-based function.
+    _TASK_TYPE_MAP = {
+        "object_detection": "object-detection",
+        "object-detection": "object-detection",
+        "classification": "single-label-classification",
+        "single_label_classification": "single-label-classification",
+        "single-label-classification": "single-label-classification",
+        "instance_segmentation": "instance-segmentation",
+        "instance-segmentation": "instance-segmentation",
+    }
+
+    def slugify(exp):
+        return re.sub(r'[^a-zA-Z0-9-]', '-', exp.lower())[:255]
+
+    def api_error(resp):
+        """Extract Roboflow's error message from a response body, if any."""
+        try:
+            err = resp.json().get("error", {})
+            msg = err.get("message") if isinstance(err, dict) else None
+            return msg or resp.text[:500]
+        except ValueError:
+            return resp.text[:500]
+
+    try:
+        project_name = project_name.strip()
+        workspace_name = workspace_name.strip()
+
+        # Normalize the task type to the hyphenated REST value.
+        normalized = task_type.strip().lower().replace(" ", "_")
+        rest_task_type = _TASK_TYPE_MAP.get(normalized)
+        if rest_task_type is None:
+            raise ValueError(
+                f"Unsupported task_type '{task_type}'. Expected one of: "
+                f"{sorted(set(_TASK_TYPE_MAP.values()))}"
+            )
+
+        # --- Check if the project already exists. ---
+        resp = requests.get(
+            f"{ROBOFLOW_API_URL}/{workspace_name}",
+            params={"api_key": api_key},
+            timeout=timeout,
+        )
+        if not resp.ok:
+            raise RuntimeError(
+                f"Could not list workspace projects "
+                f"(HTTP {resp.status_code}): {api_error(resp)}"
+            )
+
+        projects = resp.json().get("workspace", {}).get("projects", [])
+        project_ids = {p.get("name"): p.get("id") for p in projects}
+
+        if project_name in project_ids:
+            print(f"INFO: Project '{project_name}' already exists in the workspace.")
+            return project_ids[project_name]
+
+        # --- Create the project. ---
+        print(f"Project '{project_name}' does not exist, creating....")
+        payload = {
+            "name": project_name,
+            "type": rest_task_type,
+            "license": license,
+            "annotation": slugify(annotation_group),
+        }
+        if folder_group:
+            payload["group"] = folder_group.strip()
+
+        resp = requests.post(
+            f"{ROBOFLOW_API_URL}/{workspace_name}/projects",
+            params={"api_key": api_key},
+            json=payload,
+            timeout=timeout,
+        )
+        if not resp.ok:
+            raise RuntimeError(
+                f"Project creation failed "
+                f"(HTTP {resp.status_code}): {api_error(resp)}"
+            )
+
+        project = resp.json()
+        project_id = project.get("id") or f"{workspace_name}/{slugify(project_name)}"
+        print(f"Project '{project_name}' created successfully in the workspace.")
+        return project_id
+
+    except Exception as e:
+        print(f"Error finding/creating project '{project_name}': {e}")
+        return None
+
+
+def get_export_link(workspace, project, version, task, api_key, timeout_s=300):
+    """Poll until Roboflow finishes generating the export (202 = still building)."""
+    url = f"https://api.roboflow.com/{workspace}/{project}/{version}/{EXPORT_FORMATS[task]}"
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        r = requests.get(url, params={"api_key": api_key}, timeout=30)
+        if r.status_code == 200:
+            return r.json()["export"]["link"]
+        if r.status_code != 202:
+            raise RuntimeError(f"Export failed [{r.status_code}]: {r.text[:200]}")
+        print("still generating...")
+        time.sleep(5)
+    raise TimeoutError(f"Export not ready after {timeout_s}s")
+
+
+def download_zip(link, dest_path):
+    with requests.get(link, stream=True, timeout=120) as z:
+        z.raise_for_status()
+        with open(dest_path, "wb") as f:
+            for chunk in z.iter_content(1 << 20):
+                f.write(chunk)
+    print(f"{os.path.getsize(dest_path)/1e6:.1f} MB")
+    return dest_path
+

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+# This was the example code given by the Cloverfield API team.
+
+#
 Cloverfield Results Downloader
 ==============================
 

@@ -348,16 +348,33 @@ class HiphenData:
                 self.get_site_info()
                 print(self.site_info)
                 df = pd.DataFrame({'flight_date': self.site_info['missions']})
-                df['country'] = self.site_info["country"]
-                df['crop'] = self.site_info["crop"]
-                df['location'] = self.site_info['displayName']
-                df['contract_id'] = str(contract['id'])
-                df['contract_idx'] = c_idx
-                df['contract'] = str(contract['name'])
-                df['site_idx'] = s_idx
-                df['site_id'] = str(site['id'])
-                df['site'] = str(site['name'])
-                df_list.append(df)
+                if len(df) > 0:
+                    first_flight_date = pd.to_datetime(df['flight_date'])
+                    min_date = first_flight_date.min()
+                    df['year'] = min_date.year
+                    df['month'] = min_date.month
+                    df['country'] = self.site_info["country"]
+                    df['crop'] = self.site_info["crop"]
+                    df['location'] = self.site_info['displayName']
+                    df['contract_id'] = str(contract['id'])
+                    df['contract_idx'] = c_idx
+                    df['contract'] = str(contract['name'])
+                    df['site_idx'] = s_idx
+                    df['site_id'] = str(site['id'])
+                    df['site'] = str(site['name'])
+
+                    country_val = df['country'].iloc[0]
+                    crop_val = df['crop'].iloc[0]
+
+                    if pd.notna(country_val) and pd.notna(crop_val):
+                        crop_val = crop_val.replace(' ', '_')
+                        df['season'] = pth.season_code(
+                            year=df['year'].min(),
+                            country=str(country_val),
+                            crop=str(crop_val),
+                            time_of_year=df['month'].iloc[0]
+                        )
+                    df_list.append(df)
 
         out_df = pd.concat(df_list)
         out_df.reset_index(drop=True)
@@ -371,7 +388,7 @@ class HiphenData:
             self.data_summary.loc[idx, 'plot_dir'] = os.path.join(volume,
                                                                   row['contract'].lower(),
                                                                   '*',
-                                                                  '*',
+                                                                  row['season'].lower(),
                                                                   row['location'].lower(),
                                                                   row['location'].lower(),
                                                                   'drone',
