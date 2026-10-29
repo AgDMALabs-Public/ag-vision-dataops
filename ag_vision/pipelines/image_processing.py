@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 import os
+
 from ag_vision.core.image import AgImage
 from ag_vision.constants import paths as pth
 from ag_vision.core import img_qc as iq
@@ -21,6 +22,7 @@ def process_single_image(image_id, file_path, platform: str):
             return {'image_id': image_id, 'error': 'No Image Quality Metadata'}
 
         iq = ag_img.metadata.image_quality
+
         acq = ag_img.metadata.acquisition_properties
 
         return {
@@ -55,8 +57,21 @@ def process_single_image(image_id, file_path, platform: str):
 
 def generate_images_table(img_list: list, platform: str, project_index: int = 5) -> pd.DataFrame:
     """
+    Build the images table from a list of image paths.
 
+    Expected layout for image path (project_index points at <project>):   
+    ''/Volumes/<catalog>/production/data/<project>/<site>/<trial>/<season>/<field>/<location(study)>/trait_collection/images/<protocol>/<upload_date>/<plot_id>/<image_id>.jpg
+    0 1        2         3          4    5         6      7       8        9       10                11               12     13         14            15        16 
+    
+    The function also handles the case where the plot_id is missing, by setting a default value of 'none'.
+    Args:
+        img_list (list): List of image file paths.
+        project_index (int, optional): Index of the project name in the path (when using the .split('/') function). Defaults to 5.
+
+    Returns:
+        pd.DataFrame: images table.
     """
+
     img_list = list(img_list)
 
     img_df = pd.DataFrame({'file_path': img_list})
@@ -70,13 +85,14 @@ def generate_images_table(img_list: list, platform: str, project_index: int = 5)
     img_df['location'] = [x.split('/')[project_index + 5] for x in img_list]
     img_df['protocol'] = [x.split('/')[project_index + 8] for x in img_list]
     img_df['upload_date'] = [x.split('/')[project_index + 9] for x in img_list]
+    img_df['plot_id'] = [x.split('/')[project_index + 10] for x in img_list]
 
-    img_df['plot_id'] = [
-        x.split('/')[project_index + 9]
-        if x.split('/')[project_index + 9] != os.path.basename(x).split('.')[0]
-        else 'none'
-        for x in img_list
-    ]
+    # img_df['plot_id'] = [
+    #     x.split('/')[project_index + 10]
+    #     if x.split('/')[project_index + 10] != os.path.basename(x).split('.')[0]
+    #     else 'none'
+    #     for x in img_list
+    # ]
 
     rows = list(img_df[['image_id', 'file_path']].itertuples(index=False))
     out_list = []

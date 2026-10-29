@@ -26,6 +26,12 @@
       "metadata": {}
     },
     {
+      "name": "site",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
       "name": "season",
       "type": "string",
       "nullable": true,
