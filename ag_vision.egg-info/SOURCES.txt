@@ -41,10 +41,10 @@ ag_vision/mobile/image.py
 ag_vision/mobile/ingest.py
 ag_vision/pipelines/__init__.py
 ag_vision/pipelines/annotation_processing.py
-ag_vision/pipelines/audio_processing.py
 ag_vision/pipelines/dataframe_processing.py
 ag_vision/pipelines/drone_processing.py
 ag_vision/pipelines/image_processing.py
+ag_vision/pipelines/survey_processing.py
 ag_vision/pipelines/video_processing.py
 ag_vision/rover/__init__.py
 ag_vision/rover/image.py
