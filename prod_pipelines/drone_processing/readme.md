@@ -19,6 +19,12 @@ Several notebooks in this repo require you to set a catalog and schema value (us
 
 Together, a table's full path looks like: catalog.schema.table_name (e.g. use1_prod_artemis_catalog_3718194974443840.tier1_raw.orthomosaic_data.flights).
 
+## FOR ALL JOBS.
+So the notebooks know the correct catalog and schema names
+EX: Set Parameters to (replace with your catalog and schema):
+catalog = "use1_prod_artemis_catalog_3718194974443840"
+schema = "tier1_raw"
+
 ## Job 1: `TABLE_UPDATE`
 
 This job updates the flight and orthomosaic tables and is made up of **3 sequential tasks**, each running on **Serverless** compute.
