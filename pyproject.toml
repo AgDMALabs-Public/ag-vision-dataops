@@ -50,6 +50,9 @@ dependencies = [
     "librosa>=0.11.0",
 ]
 
+dev = [
+    "pyspark>=3.5,<4",
+]
 
 [tool.setuptools]
 # This section tells setuptools what to do.
