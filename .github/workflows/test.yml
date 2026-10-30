@@ -33,7 +33,7 @@ jobs:
 
 
       - name: Install dependencies
-        run: pip install --no-build-isolation -e .
+        run: pip install --no-build-isolation -e ".[dev]"
       - name: Run tests
         run: pytest
 
